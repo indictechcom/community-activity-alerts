@@ -37,11 +37,54 @@ This project tracks and analyzes edit activity across Wikimedia projects. It con
 - `edit_counts`: Stores raw monthly edit counts for each project.
 - `community_alerts`: Stores detected peaks/alerts for each project.
 
+## Local Setup
+
+### Prerequisites
+- Python 3.7+
+- MySQL server
+- Virtual environment (recommended)
+
+### Installation
+
+1. **Clone and set up environment:**
+   ```bash
+   git clone <repository-url>
+   cd community-activity-alerts
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+2. **Set up MySQL database:**
+   ```sql
+   CREATE DATABASE community_alerts;
+   CREATE USER 'wikim'@'localhost' IDENTIFIED BY 'wikimedia';
+   GRANT ALL PRIVILEGES ON community_alerts.* TO 'wikim'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+3. **Collect data:**
+   ```bash
+   python fetch_and_store_cron.py
+   ```
+   This fetches 3 years of edit data for all Wikimedia projects (may take 30+ minutes).
+
+4. **Generate alerts:**
+   ```bash
+   python "Community alerts .py"
+   ```
+   This analyzes the data and detects activity peaks.
+
+5. **Start the web interface:**
+   ```bash
+   python app.py
+   ```
+   Visit `http://localhost:5000` to explore the data.
+
 ## Usage
 
-1. Run `fetch_and_store_cron.py` to fetch and store edit counts.
-2. Run `Community alerts .py` to analyze the data and store alerts.
-3. Use the web interface (see `app.py`) to visualize and explore the results.
-
----
-For more details, see the code and comments in each script.
+The web interface allows you to:
+- Select different Wikimedia language communities and projects
+- Set custom date ranges with an interactive slider
+- View detected activity peaks in both table and chart format
+- Click on chart peaks to add labels and annotations
