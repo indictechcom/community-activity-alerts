@@ -325,6 +325,24 @@
             {% endif %}
         </div>
 
+        {% if chart %}
+        <div id="chartContainer">{{ chart|safe }}</div>
+        {% endif %}
+
+        <!-- Peak Label Modal -->
+        <div id="peakLabelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+                <h3 class="text-xl font-bold mb-4">Update Peak Label</h3>
+                <input type="hidden" id="peakProject">
+                <input type="hidden" id="peakTimestamp">
+                <textarea id="peakLabel" class="w-full p-2 border rounded" rows="3" placeholder="Enter label..."></textarea>
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button id="closePeakLabelModal" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+                    <button id="savePeakLabel" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
             class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
@@ -862,6 +880,68 @@
             if (filterUsersValue === "true") {
                 filterUsers.checked = true;
             }
+        });
+
+        // Peak label functionality
+        const peakLabelModal = document.getElementById('peakLabelModal');
+        const closePeakLabelModal = document.getElementById('closePeakLabelModal');
+        const savePeakLabel = document.getElementById('savePeakLabel');
+        const peakProject = document.getElementById('peakProject');
+        const peakTimestamp = document.getElementById('peakTimestamp');
+        const peakLabel = document.getElementById('peakLabel');
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const chartContainer = document.getElementById('chartContainer');
+            if (chartContainer) {
+                const plotDiv = chartContainer.querySelector('.plotly-graph-div');
+                if (plotDiv) {
+                    plotDiv.on('plotly_click', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            const project = customData.project;
+                            const timestamp = customData.timestamp;
+
+                            peakProject.value = project;
+                            peakTimestamp.value = timestamp;
+
+                            // Fetch existing label
+                            fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    peakLabel.value = data.label || '';
+                                    peakLabelModal.classList.remove('hidden');
+                                });
+                        }
+                    });
+                }
+            }
+        });
+
+        closePeakLabelModal.addEventListener('click', () => {
+            peakLabelModal.classList.add('hidden');
+        });
+
+        savePeakLabel.addEventListener('click', () => {
+            const project = peakProject.value;
+            const timestamp = peakTimestamp.value;
+            const label = peakLabel.value;
+
+            fetch('/api/update_peak_label', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ project, timestamp, label }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    peakLabelModal.classList.add('hidden');
+                    window.location.reload();
+                    // alert('Label updated successfully!');
+                } else {
+                    alert('Error updating label: ' + data.error);
+                }
+            });
         });
 
     </script>

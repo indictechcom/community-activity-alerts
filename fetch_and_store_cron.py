@@ -13,10 +13,10 @@ from random import uniform
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Load Toolforge DB credentials ---
-cfg = configparser.ConfigParser()
-cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
-user = cfg['client']['user']
-password = cfg['client']['password']
+# cfg = configparser.ConfigParser()
+# cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
+# user = cfg['client']['user']
+# password = cfg['client']['password']
 
 # --- Fetch project list from SiteMatrix ---
 sitematrix_url = "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json"
@@ -39,22 +39,28 @@ for key, val in sitematrix.items():
                 cleaned_url = site_url.replace("https://", "")
                 projects.add(cleaned_url)
 
-# --- Date range for last month ---
-today = datetime.utcnow().date().replace(day=1)
-last_month_end = today - timedelta(days=1)
-last_month_start = last_month_end.replace(day=1)
+# --- Date range for last 3 complete years ---
+today = datetime.utcnow().date()
+# Get the first day of current month
+current_month_start = today.replace(day=1)
+# Get the last day of previous month (end of data range)
+end_date = current_month_start - timedelta(days=1)
 
-start = last_month_start.strftime("%Y%m%d")
-end = last_month_end.strftime("%Y%m%d")
+# Go back 3 years from the end date to get start date
+start_year = end_date.year - 3
+start_date = datetime(start_year, 1, 1).date()  # January 1st, 3 years ago
+
+start = start_date.strftime("%Y%m%d")
+end = end_date.strftime("%Y%m%d")
 
 # --- Connect to Toolforge DB ---
-DB_NAME = 's56391__community_alerts'
+DB_NAME = 'community_alerts'
 DB_TABLE = 'edit_counts'
 
 conn = pymysql.connect(
-    host='tools.db.svc.wikimedia.cloud',
-    user=user,
-    password=password,
+    host='localhost',
+    user='wikim',
+    password='wikimedia',
     database=DB_NAME,
     charset='utf8mb4',
     autocommit=True
