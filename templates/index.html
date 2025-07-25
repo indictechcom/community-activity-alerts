@@ -130,7 +130,7 @@
                 <h2 class="text-2xl text-center font-semibold">{{ data|length }} {{ 'Result' if data|length == 1 else
                     'Results' }} Found</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto mb-8">
                 <table class="min-w-full bg-white border border-gray-300">
                     <thead>
                         <tr class="bg-gray-200">
@@ -154,16 +154,18 @@
                     </tbody>
                 </table>
             </div>
+            
+            {% if chart %}
+            <div class="mt-8">
+                {{ chart|safe }}
+            </div>
+            {% endif %}
             {% else %}
             <div class="text-center text-gray-500">
                 <p>No data available to display.</p>
             </div>
             {% endif %}
         </div>
-
-        {% if chart %}
-        <div>{{ chart|safe }}</div>
-        {% endif %}
 
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
