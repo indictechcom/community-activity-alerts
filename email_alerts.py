@@ -11,13 +11,13 @@ import configparser
 # --- Setup logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Load config from configparser file ---
-cfg = configparser.ConfigParser()
-cfg.read('/data/project/community-activity-alerts-system/production.my.cnf')
+# # --- Load config from configparser file ---
+# cfg = configparser.ConfigParser()
+# cfg.read('/data/project/community-activity-alerts-system/production.my.cnf')
 
-GMAIL_USER = cfg['gmail']['user']
-GMAIL_PASSWORD = cfg['gmail']['password']
-ALERT_FROM = cfg['gmail']['from']
+# GMAIL_USER = cfg['gmail']['user']
+# GMAIL_PASSWORD = cfg['gmail']['password']
+# ALERT_FROM = cfg['gmail']['from']
 
 # # --- Load global mailing list from JSON file ---
 # MAILING_LIST_FILE = "mailing_list.json"
@@ -29,6 +29,10 @@ ALERT_FROM = cfg['gmail']['from']
 # MAILING_LIST = config.get("global_mailing_list", [])
 
 MAILING_LIST = ["fuzzphorescence@gmail.com", "farzana.shjhn@gmail.com"]
+
+GMAIL_USER="farzana.shjhn@gmail.com"
+GMAIL_PASSWORD="pxes dycc hqoy mnen"
+ALERT_FROM="alerts@wiki.org"
 
 # --- Load Toolforge DB credentials ---
 user = cfg['client']['user']
