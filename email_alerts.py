@@ -11,8 +11,10 @@ import configparser
 # --- Setup logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# # --- Load config from configparser file ---
-# cfg = configparser.ConfigParser()
+# --- Load config from configparser file ---
+cfg = configparser.ConfigParser()
+cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
+
 # cfg.read('/data/project/community-activity-alerts-system/production.my.cnf')
 
 # GMAIL_USER = cfg['gmail']['user']
