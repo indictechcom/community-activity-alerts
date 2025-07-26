@@ -312,13 +312,13 @@
                     </tbody>
                 </table>
             </div>
+            {% endif %}
 
             {% if chart %}
             <div class="mt-4" id="chartContainer">
                 {{ chart|safe }}
             </div>
-            {% endif %}
-            {% else %}
+            {% elif not data %}
             <div class="text-center text-gray-500">
                 <p>No data available to display.</p>
             </div>
