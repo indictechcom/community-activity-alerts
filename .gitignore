@@ -130,6 +130,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Test files
+mailing_list.json
+peak_alerts.csv
+
 # Spyder project settings
 .spyderproject
 .spyproject
