@@ -314,7 +314,7 @@
             </div>
 
             {% if chart %}
-            <div class="mt-8">
+            <div class="mt-4" id="chartContainer">
                 {{ chart|safe }}
             </div>
             {% endif %}
@@ -325,9 +325,7 @@
             {% endif %}
         </div>
 
-        {% if chart %}
-        <div id="chartContainer">{{ chart|safe }}</div>
-        {% endif %}
+
 
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
@@ -890,7 +888,7 @@
                                 hoverInput.style.position = 'absolute';
                                 hoverInput.style.backgroundColor = 'white';
                                 hoverInput.style.border = '1px solid #ccc';
-                                hoverInput.style.padding = '5px';
+                                hoverInput.style.padding = '3px';
                                 hoverInput.style.zIndex = '1000';
                                 hoverInput.style.display = 'flex';
                                 hoverInput.style.alignItems = 'center';
@@ -972,16 +970,23 @@
                                 });
                             }
 
+                            // Get chart container position for relative positioning
+                            const chartRect = plotDiv.getBoundingClientRect();
+                            const relativeX = data.event.clientX - chartRect.left;
+                            const relativeY = data.event.clientY - chartRect.top;
+
                             // Fetch existing label
                             fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
                                 .then(response => response.json())
                                 .then(data => {
                                     const input = hoverInput.querySelector('input');
                                     input.value = data.label || '';
-                                    hoverInput.style.left = `${data.event ? data.event.clientX : event.clientX}px`;
-                                    hoverInput.style.top = `${data.event ? data.event.clientY : event.clientY}px`;
+                                    
+                                    // Position relative to chart container with scroll offset
+                                    const updatedChartRect = plotDiv.getBoundingClientRect();
+                                    hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
+                                    hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
                                     hoverInput.style.display = 'flex';
-                                    isInputActive = true;
                                     
                                     // Focus the input and move cursor to end
                                     setTimeout(() => {
@@ -990,8 +995,9 @@
                                     }, 100);
                                 });
 
-                            hoverInput.style.left = `${data.event.clientX}px`;
-                            hoverInput.style.top = `${data.event.clientY}px`;
+                            // Initial positioning relative to chart with scroll offset
+                            hoverInput.style.left = `${chartRect.left + relativeX + window.pageXOffset}px`;
+                            hoverInput.style.top = `${chartRect.top + relativeY + window.pageYOffset}px`;
                             hoverInput.style.display = 'flex';
                             isInputActive = true;
                         }
@@ -1022,11 +1028,11 @@
                             fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
                                 .then(response => response.json())
                                 .then(data => {
-                                    if (data.label) {
-                                        alert(`Existing Label: ${data.label}`);
-                                    } else {
-                                        alert('No label found for this peak.');
-                                    }
+                                    // if (data.label) {
+                                    //     alert(`Existing Label: ${data.label}`);
+                                    // } else {
+                                    //     alert('No label found for this peak.');
+                                    // }
                                 });
                         }
                     });

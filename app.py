@@ -191,7 +191,7 @@ def index():
                 text=peak_labels_list,
                 textposition="top center",
                 customdata=[{'project': project, 'timestamp': peak['timestamp']} for peak in peaks],
-                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br><i>Click to add label</i><extra></extra>"
+                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>"
             )
         )
 
