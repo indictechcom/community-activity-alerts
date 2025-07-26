@@ -314,7 +314,7 @@
             </div>
 
             {% if chart %}
-            <div class="mt-8">
+            <div class="mt-4" id="chartContainer">
                 {{ chart|safe }}
             </div>
             {% endif %}
@@ -324,6 +324,8 @@
             </div>
             {% endif %}
         </div>
+
+
 
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
@@ -861,6 +863,180 @@
             const filterUsersValue = urlParams.get("filter_users");
             if (filterUsersValue === "true") {
                 filterUsers.checked = true;
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const chartContainer = document.getElementById('chartContainer');
+            if (chartContainer) {
+                const plotDiv = chartContainer.querySelector('.plotly-graph-div');
+                if (plotDiv) {
+                    let hoverInput = null;
+                    let isInputActive = false;
+                    let currentProject = null;
+                    let currentTimestamp = null;
+
+                    plotDiv.on('plotly_hover', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            currentProject = customData.project;
+                            currentTimestamp = customData.timestamp;
+
+                            if (!hoverInput) {
+                                hoverInput = document.createElement('div');
+                                hoverInput.style.position = 'absolute';
+                                hoverInput.style.backgroundColor = 'white';
+                                hoverInput.style.border = '1px solid #ccc';
+                                hoverInput.style.padding = '3px';
+                                hoverInput.style.zIndex = '1000';
+                                hoverInput.style.display = 'flex';
+                                hoverInput.style.alignItems = 'center';
+                                hoverInput.style.borderRadius = '4px';
+                                hoverInput.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.placeholder = 'Enter label...';
+                                input.style.marginRight = '5px';
+                                input.style.border = '1px solid #ddd';
+                                input.style.padding = '2px 4px';
+
+                                const saveButton = document.createElement('button');
+                                saveButton.textContent = 'Save';
+                                saveButton.style.marginRight = '5px';
+                                saveButton.style.padding = '2px 8px';
+                                saveButton.style.backgroundColor = '#4CAF50';
+                                saveButton.style.color = 'white';
+                                saveButton.style.border = 'none';
+                                saveButton.style.borderRadius = '2px';
+                                saveButton.style.cursor = 'pointer';
+
+                                const saveLabel = () => {
+                                    const label = input.value;
+                                    fetch('/api/update_peak_label', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert('Label updated successfully!');
+                                            hoverInput.style.display = 'none';
+                                            isInputActive = false;
+                                            // Optionally reload to show updated chart
+                                            window.location.reload();
+                                        } else {
+                                            alert('Error updating label: ' + data.error);
+                                        }
+                                    });
+                                };
+
+                                input.addEventListener('keypress', (e) => {
+                                    if (e.key === 'Enter') {
+                                        saveLabel();
+                                    }
+                                });
+
+                                saveButton.addEventListener('click', saveLabel);
+
+                                const closeButton = document.createElement('button');
+                                closeButton.textContent = '×';
+                                closeButton.style.marginLeft = '5px';
+                                closeButton.style.padding = '2px 6px';
+                                closeButton.style.backgroundColor = '#f44336';
+                                closeButton.style.color = 'white';
+                                closeButton.style.border = 'none';
+                                closeButton.style.borderRadius = '2px';
+                                closeButton.style.cursor = 'pointer';
+
+                                closeButton.addEventListener('click', () => {
+                                    hoverInput.style.display = 'none';
+                                    isInputActive = false;
+                                });
+
+                                hoverInput.appendChild(input);
+                                hoverInput.appendChild(saveButton);
+                                hoverInput.appendChild(closeButton);
+                                document.body.appendChild(hoverInput);
+
+                                // Prevent input box from disappearing when interacting with it
+                                hoverInput.addEventListener('mouseenter', () => {
+                                    isInputActive = true;
+                                });
+                                hoverInput.addEventListener('mouseleave', () => {
+                                    isInputActive = false;
+                                });
+                            }
+
+                            // Get chart container position for relative positioning
+                            const chartRect = plotDiv.getBoundingClientRect();
+                            const relativeX = data.event.clientX - chartRect.left;
+                            const relativeY = data.event.clientY - chartRect.top;
+
+                            // Fetch existing label
+                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const input = hoverInput.querySelector('input');
+                                    input.value = data.label || '';
+                                    
+                                    // Position relative to chart container with scroll offset
+                                    const updatedChartRect = plotDiv.getBoundingClientRect();
+                                    hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
+                                    hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
+                                    hoverInput.style.display = 'flex';
+                                    
+                                    // Focus the input and move cursor to end
+                                    setTimeout(() => {
+                                        input.focus();
+                                        input.setSelectionRange(input.value.length, input.value.length);
+                                    }, 100);
+                                });
+
+                            // Initial positioning relative to chart with scroll offset
+                            hoverInput.style.left = `${chartRect.left + relativeX + window.pageXOffset}px`;
+                            hoverInput.style.top = `${chartRect.top + relativeY + window.pageYOffset}px`;
+                            hoverInput.style.display = 'flex';
+                            isInputActive = true;
+                        }
+                    });
+
+                    plotDiv.on('plotly_unhover', () => {
+                        setTimeout(() => {
+                            if (!isInputActive && hoverInput) {
+                                hoverInput.style.display = 'none';
+                            }
+                        }, 200);
+                    });
+
+                    document.addEventListener('click', (event) => {
+                        if (hoverInput && !hoverInput.contains(event.target)) {
+                            hoverInput.style.display = 'none';
+                            isInputActive = false;
+                        }
+                    });
+
+                    plotDiv.on('plotly_click', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            const project = customData.project;
+                            const timestamp = customData.timestamp;
+
+                            fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    // if (data.label) {
+                                    //     alert(`Existing Label: ${data.label}`);
+                                    // } else {
+                                    //     alert('No label found for this peak.');
+                                    // }
+                                });
+                        }
+                    });
+                }
             }
         });
 
