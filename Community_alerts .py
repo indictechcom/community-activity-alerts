@@ -9,12 +9,12 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- DB config ---
-# cfg = configparser.ConfigParser()
-# cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
-# user = cfg['client']['user']
-# password = cfg['client']['password']
+cfg = configparser.ConfigParser()
+cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
+user = cfg['client']['user']
+password = cfg['client']['password']
 
-DB_NAME = 'community_alerts'
+DB_NAME = 's56391__community_alerts'
 SOURCE_TABLE = 'edit_counts'
 ALERTS_TABLE = 'community_alerts'
 
@@ -50,9 +50,9 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
 def main():
     # Connect to DB
     conn = pymysql.connect(
-        host='localhost',
-        user='wikim',
-        password='wikimedia',
+        host='tools.db.svc.wikimedia.cloud',
+        user=user,
+        password=password,
         database=DB_NAME,
         charset='utf8mb4',
         autocommit=True
