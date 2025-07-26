@@ -329,20 +329,6 @@
         <div id="chartContainer">{{ chart|safe }}</div>
         {% endif %}
 
-        <!-- Peak Label Modal -->
-        <div id="peakLabelModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
-            <div class="bg-white p-6 rounded-lg shadow-lg w-96">
-                <h3 class="text-xl font-bold mb-4">Update Peak Label</h3>
-                <input type="hidden" id="peakProject">
-                <input type="hidden" id="peakTimestamp">
-                <textarea id="peakLabel" class="w-full p-2 border rounded" rows="3" placeholder="Enter label..."></textarea>
-                <div class="flex justify-end space-x-2 mt-4">
-                    <button id="closePeakLabelModal" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
-                    <button id="savePeakLabel" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
             class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
@@ -882,19 +868,150 @@
             }
         });
 
-        // Peak label functionality
-        const peakLabelModal = document.getElementById('peakLabelModal');
-        const closePeakLabelModal = document.getElementById('closePeakLabelModal');
-        const savePeakLabel = document.getElementById('savePeakLabel');
-        const peakProject = document.getElementById('peakProject');
-        const peakTimestamp = document.getElementById('peakTimestamp');
-        const peakLabel = document.getElementById('peakLabel');
-
         document.addEventListener("DOMContentLoaded", () => {
             const chartContainer = document.getElementById('chartContainer');
             if (chartContainer) {
                 const plotDiv = chartContainer.querySelector('.plotly-graph-div');
                 if (plotDiv) {
+                    let hoverInput = null;
+                    let isInputActive = false;
+                    let currentProject = null;
+                    let currentTimestamp = null;
+
+                    plotDiv.on('plotly_hover', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            currentProject = customData.project;
+                            currentTimestamp = customData.timestamp;
+
+                            if (!hoverInput) {
+                                hoverInput = document.createElement('div');
+                                hoverInput.style.position = 'absolute';
+                                hoverInput.style.backgroundColor = 'white';
+                                hoverInput.style.border = '1px solid #ccc';
+                                hoverInput.style.padding = '5px';
+                                hoverInput.style.zIndex = '1000';
+                                hoverInput.style.display = 'flex';
+                                hoverInput.style.alignItems = 'center';
+                                hoverInput.style.borderRadius = '4px';
+                                hoverInput.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.placeholder = 'Enter label...';
+                                input.style.marginRight = '5px';
+                                input.style.border = '1px solid #ddd';
+                                input.style.padding = '2px 4px';
+
+                                const saveButton = document.createElement('button');
+                                saveButton.textContent = 'Save';
+                                saveButton.style.marginRight = '5px';
+                                saveButton.style.padding = '2px 8px';
+                                saveButton.style.backgroundColor = '#4CAF50';
+                                saveButton.style.color = 'white';
+                                saveButton.style.border = 'none';
+                                saveButton.style.borderRadius = '2px';
+                                saveButton.style.cursor = 'pointer';
+
+                                const saveLabel = () => {
+                                    const label = input.value;
+                                    fetch('/api/update_peak_label', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert('Label updated successfully!');
+                                            hoverInput.style.display = 'none';
+                                            isInputActive = false;
+                                            // Optionally reload to show updated chart
+                                            window.location.reload();
+                                        } else {
+                                            alert('Error updating label: ' + data.error);
+                                        }
+                                    });
+                                };
+
+                                input.addEventListener('keypress', (e) => {
+                                    if (e.key === 'Enter') {
+                                        saveLabel();
+                                    }
+                                });
+
+                                saveButton.addEventListener('click', saveLabel);
+
+                                const closeButton = document.createElement('button');
+                                closeButton.textContent = '×';
+                                closeButton.style.marginLeft = '5px';
+                                closeButton.style.padding = '2px 6px';
+                                closeButton.style.backgroundColor = '#f44336';
+                                closeButton.style.color = 'white';
+                                closeButton.style.border = 'none';
+                                closeButton.style.borderRadius = '2px';
+                                closeButton.style.cursor = 'pointer';
+
+                                closeButton.addEventListener('click', () => {
+                                    hoverInput.style.display = 'none';
+                                    isInputActive = false;
+                                });
+
+                                hoverInput.appendChild(input);
+                                hoverInput.appendChild(saveButton);
+                                hoverInput.appendChild(closeButton);
+                                document.body.appendChild(hoverInput);
+
+                                // Prevent input box from disappearing when interacting with it
+                                hoverInput.addEventListener('mouseenter', () => {
+                                    isInputActive = true;
+                                });
+                                hoverInput.addEventListener('mouseleave', () => {
+                                    isInputActive = false;
+                                });
+                            }
+
+                            // Fetch existing label
+                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const input = hoverInput.querySelector('input');
+                                    input.value = data.label || '';
+                                    hoverInput.style.left = `${data.event ? data.event.clientX : event.clientX}px`;
+                                    hoverInput.style.top = `${data.event ? data.event.clientY : event.clientY}px`;
+                                    hoverInput.style.display = 'flex';
+                                    isInputActive = true;
+                                    
+                                    // Focus the input and move cursor to end
+                                    setTimeout(() => {
+                                        input.focus();
+                                        input.setSelectionRange(input.value.length, input.value.length);
+                                    }, 100);
+                                });
+
+                            hoverInput.style.left = `${data.event.clientX}px`;
+                            hoverInput.style.top = `${data.event.clientY}px`;
+                            hoverInput.style.display = 'flex';
+                            isInputActive = true;
+                        }
+                    });
+
+                    plotDiv.on('plotly_unhover', () => {
+                        setTimeout(() => {
+                            if (!isInputActive && hoverInput) {
+                                hoverInput.style.display = 'none';
+                            }
+                        }, 200);
+                    });
+
+                    document.addEventListener('click', (event) => {
+                        if (hoverInput && !hoverInput.contains(event.target)) {
+                            hoverInput.style.display = 'none';
+                            isInputActive = false;
+                        }
+                    });
+
                     plotDiv.on('plotly_click', function(data) {
                         const point = data.points[0];
                         if (point.curveNumber === 1) { // Peaks are the second trace
@@ -902,46 +1019,19 @@
                             const project = customData.project;
                             const timestamp = customData.timestamp;
 
-                            peakProject.value = project;
-                            peakTimestamp.value = timestamp;
-
-                            // Fetch existing label
                             fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
                                 .then(response => response.json())
                                 .then(data => {
-                                    peakLabel.value = data.label || '';
-                                    peakLabelModal.classList.remove('hidden');
+                                    if (data.label) {
+                                        alert(`Existing Label: ${data.label}`);
+                                    } else {
+                                        alert('No label found for this peak.');
+                                    }
                                 });
                         }
                     });
                 }
             }
-        });
-
-        closePeakLabelModal.addEventListener('click', () => {
-            peakLabelModal.classList.add('hidden');
-        });
-
-        savePeakLabel.addEventListener('click', () => {
-            const project = peakProject.value;
-            const timestamp = peakTimestamp.value;
-            const label = peakLabel.value;
-
-            fetch('/api/update_peak_label', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ project, timestamp, label }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    peakLabelModal.classList.add('hidden');
-                    window.location.reload();
-                    // alert('Label updated successfully!');
-                } else {
-                    alert('Error updating label: ' + data.error);
-                }
-            });
         });
 
     </script>
