@@ -4,7 +4,7 @@ import pandas as pd
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
-import json
+# import json
 import pymysql
 import configparser
 
@@ -19,14 +19,16 @@ GMAIL_USER = cfg['gmail']['user']
 GMAIL_PASSWORD = cfg['gmail']['password']
 ALERT_FROM = cfg['gmail']['from']
 
-# --- Load global mailing list from JSON file ---
-MAILING_LIST_FILE = "mailing_list.json"
-if not os.path.exists(MAILING_LIST_FILE):
-    logging.error("Mailing list file not found.")
-    exit(1)
-with open(MAILING_LIST_FILE, "r") as f:
-    config = json.load(f)
-MAILING_LIST = config.get("global_mailing_list", [])
+# # --- Load global mailing list from JSON file ---
+# MAILING_LIST_FILE = "mailing_list.json"
+# if not os.path.exists(MAILING_LIST_FILE):
+#     logging.error("Mailing list file not found.")
+#     exit(1)
+# with open(MAILING_LIST_FILE, "r") as f:
+#     config = json.load(f)
+# MAILING_LIST = config.get("global_mailing_list", [])
+
+MAILING_LIST = ["fuzzphorescence@gmail.com", "farzana.shjhn@gmail.com"]
 
 # --- Load Toolforge DB credentials ---
 user = cfg['client']['user']
