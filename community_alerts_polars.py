@@ -11,7 +11,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# --- DB config ---
+#--- DB config ---
 cfg = configparser.ConfigParser()
 cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
 user = cfg["client"]["user"]
