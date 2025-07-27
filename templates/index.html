@@ -329,6 +329,17 @@
             <div class="mt-4" id="chartContainer">
                 {{ chart|safe }}
             </div>
+            {% elif not data %}
+            <div class="text-center text-gray-500">
+                <p>No data available to display.</p>
+            </div>
+            {% endif %}
+        </div>
+
+            {% if chart %}
+            <div class="mt-4" id="chartContainer">
+                {{ chart|safe }}
+            </div>
             {% endif %}
        
         <!-- Button to toggle sidebar -->
@@ -395,7 +406,6 @@
             </div>
         </div>
     </div>
-
     <script> 
 
         const base_url = "{{ base_url }}";  // This becomes something like "/wikimedia"
@@ -422,11 +432,26 @@
                 projectTypes.add(sitename);
             });
         });
-
         // Create project data structure
         Array.from(projectTypes).forEach(projectType => {
             projectData[projectType] = {
                 name: projectType.charAt(0).toUpperCase() + projectType.slice(1),
+
+        const projectNameMap = {
+            'wiki': 'Wikipedia',
+            'wiktionary': 'Wiktionary',
+            'wikibooks': 'Wikibooks',
+            'wikinews': 'Wikinews',
+            'wikiquote': 'Wikiquote',
+            'wikisource': 'Wikisource',
+            'wikiversity': 'Wikiversity',
+            'wikivoyage': 'Wikivoyage'
+        };
+
+
+        Array.from(projectTypes).forEach(projectType => {
+            projectData[projectType] = {
+              name: projectNameMap[projectType] || projectType.charAt(0).toUpperCase + projectType.slice(1),
                 languages: []
             };
         });
@@ -486,6 +511,7 @@
 
             handleSearch(term) {
                 this.searchTerm = term.toLowerCase();
+                this.highlightedIndex = -1; // Reset highlight when searching
                 this.debounce(() => {
                     if (this.currentStep === 'projects') {
                         this.showProjects();
@@ -540,11 +566,20 @@
                 this.input.removeAttribute('readonly');
                 this.dropdown.classList.remove('hidden');
                 this.input.focus();
+                // Clear search when opening dropdown if we're back to projects
+                if (this.currentStep === 'projects' && this.selectedProject === null) {
+                    this.input.value = '';
+                    this.searchTerm = '';
+                }
             }
 
             closeDropdown() {
                 this.dropdown.classList.add('hidden');
                 this.input.setAttribute('readonly', '');
+                // Only set readonly if we have a final selection
+                if (this.selectedLanguage) {
+                    this.input.setAttribute('readonly', '');
+                }
                 this.highlightedIndex = -1;
             }
 
@@ -616,6 +651,8 @@
                         this.selectedProject = null;
                         this.searchTerm = '';
                         this.input.value = '';
+                        this.input.placeholder = 'Search projects...';
+
                         this.showProjects();
                     });
                 }
@@ -636,6 +673,8 @@
                 this.searchTerm = '';
                 this.input.value = '';
                 this.input.placeholder = `Search ${this.data[projectKey].name} languages...`;
+
+                this.input.removeAttribute('readonly'); // Keep input editable for language search
                 this.showLanguages();
             }
 
@@ -666,6 +705,7 @@
                 this.searchTerm = '';
                 this.input.value = '';
                 this.input.placeholder = 'Search projects...';
+                this.input.removeAttribute('readonly');
                 this.closeDropdown();
             }
         }
@@ -892,7 +932,7 @@
                     let currentProject = null;
                     let currentTimestamp = null;
 
-                    plotDiv.on('plotly_hover', function(data) {
+                    plotDiv.on('plotly_hover', function (data) {
                         const point = data.points[0];
                         if (point.curveNumber === 1) { // Peaks are the second trace
                             const customData = point.customdata;
@@ -935,18 +975,18 @@
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
                                     })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            alert('Label updated successfully!');
-                                            hoverInput.style.display = 'none';
-                                            isInputActive = false;
-                                            // Optionally reload to show updated chart
-                                            window.location.reload();
-                                        } else {
-                                            alert('Error updating label: ' + data.error);
-                                        }
-                                    });
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                alert('Label updated successfully!');
+                                                hoverInput.style.display = 'none';
+                                                isInputActive = false;
+                                                // Optionally reload to show updated chart
+                                                window.location.reload();
+                                            } else {
+                                                alert('Error updating label: ' + data.error);
+                                            }
+                                        });
                                 };
 
                                 input.addEventListener('keypress', (e) => {
@@ -997,13 +1037,11 @@
                                 .then(data => {
                                     const input = hoverInput.querySelector('input');
                                     input.value = data.label || '';
-                                    
                                     // Position relative to chart container with scroll offset
                                     const updatedChartRect = plotDiv.getBoundingClientRect();
                                     hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
                                     hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
                                     hoverInput.style.display = 'flex';
-                                    
                                     // Focus the input and move cursor to end
                                     setTimeout(() => {
                                         input.focus();
@@ -1034,7 +1072,8 @@
                         }
                     });
 
-                    plotDiv.on('plotly_click', function(data) {
+                    plotDiv.on('plotly_click', function (data) {
+
                         const point = data.points[0];
                         if (point.curveNumber === 1) { // Peaks are the second trace
                             const customData = point.customdata;
