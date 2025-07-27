@@ -414,7 +414,7 @@
 
         Array.from(projectTypes).forEach(projectType => {
             projectData[projectType] = {
-                name: projectNameMap[projectType] || projectType.charAt(0).toUpperCase + projectType.slice(1),
+              name: projectNameMap[projectType] || projectType.charAt(0).toUpperCase + projectType.slice(1),
                 languages: []
             };
         });
