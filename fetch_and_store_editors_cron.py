@@ -12,12 +12,6 @@ from random import uniform
 # --- Configure logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Load Toolforge DB credentials ---
-cfg = configparser.ConfigParser()
-cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
-user = cfg['client']['user']
-password = cfg['client']['password']
-
 # --- Fetch project list from SiteMatrix ---
 sitematrix_url = "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json"
 response = requests.get(sitematrix_url)
@@ -41,21 +35,17 @@ for key, val in sitematrix.items():
 
 # --- Date range for last 3 complete years ---
 today = datetime.utcnow().date()
-# Get the first day of current month
 current_month_start = today.replace(day=1)
-# Get the last day of previous month (end of data range)
 end_date = current_month_start - timedelta(days=1)
-
-# Go back 3 years from the end date to get start date
 start_year = end_date.year - 3
-start_date = datetime(start_year, 1, 1).date()  # January 1st, 3 years ago
+start_date = datetime(start_year, 1, 1).date()
 
 start = start_date.strftime("%Y%m%d")
 end = end_date.strftime("%Y%m%d")
 
-# --- Connect to Toolforge DB ---
+# --- Connect to DB ---
 DB_NAME = 'community_alerts'
-DB_TABLE = 'edit_counts'
+DB_TABLE = 'editor_counts'
 
 conn = pymysql.connect(
     host='localhost',
@@ -68,75 +58,66 @@ conn = pymysql.connect(
 
 cursor = conn.cursor()
 
-# --- Ensure main table exists ---
+# --- Ensure editor counts table exists ---
 create_table_sql = f'''
 CREATE TABLE IF NOT EXISTS {DB_TABLE} (
     timestamp DATETIME,
-    edit_count INT,
+    editor_count INT,
     project VARCHAR(255),
     PRIMARY KEY (timestamp, project)
 )
 '''
 cursor.execute(create_table_sql)
 
-# --- Optional: Metadata table for fetch status ---
-# cursor.execute('''
-# CREATE TABLE IF NOT EXISTS fetch_runs (
-#     run_time DATETIME,
-#     project VARCHAR(255),
-#     status VARCHAR(20),
-#     message TEXT
-# )
-# ''')
-
-# --- API config ---
-base_url = "https://wikimedia.org/api/rest_v1/metrics/edits/aggregate"
+# --- API config for editors ---
+base_url = "https://wikimedia.org/api/rest_v1/metrics/editors/aggregate"
 editor_type = "all-editor-types"
 page_type = "content"
+activity_level = "1..4-edits"  # Editors with 1-4 edits, or use "5..24-edits", "25..99-edits", "100..-edits"
 granularity = "monthly"
 
 # --- Loop through projects ---
 for project in sorted(projects):
-    logging.info(f"Fetching edits for {project} from {start} to {end}")
+    logging.info(f"Fetching editor counts for {project} from {start} to {end}")
 
-    url = f"{base_url}/{project}/{editor_type}/{page_type}/{granularity}/{start}/{end}"
+    url = f"{base_url}/{project}/{editor_type}/{page_type}/{activity_level}/{granularity}/{start}/{end}"
     response = requests.get(url)
     if response.status_code != 200:
         logging.warning(f"API Error for {project}: {response.status_code} - {response.text}")
-        time.sleep(uniform(1, 3))  # Sleep before next request
+        time.sleep(uniform(1, 3))
         continue
 
     try:
         data = response.json()
-        edit_counts = data["items"][0]["results"]
-        if not edit_counts:
-            logging.info(f"No data returned for {project}")
+        editor_counts = data["items"][0]["results"]
+        if not editor_counts:
+            logging.info(f"No editor data returned for {project}")
             continue
     except Exception as e:
         logging.error(f"Parsing error for {project}: {e}")
         continue
 
-    df = pd.DataFrame(edit_counts)
+    df = pd.DataFrame(editor_counts)
     df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
     df['project'] = project
-    df.rename(columns={'edits': 'edit_count'}, inplace=True)
+    df.rename(columns={'editors': 'editor_count'}, inplace=True)
 
     for _, row in df.iterrows():
         try:
             insert_sql = f"""
-            INSERT INTO {DB_TABLE} (timestamp, edit_count, project)
+            INSERT INTO {DB_TABLE} (timestamp, editor_count, project)
             VALUES (%s, %s, %s)
-            ON DUPLICATE KEY UPDATE edit_count = VALUES(edit_count)
+            ON DUPLICATE KEY UPDATE editor_count = VALUES(editor_count)
             """
             cursor.execute(
                 insert_sql,
-                (row['timestamp'].to_pydatetime(), int(row['edit_count']), row['project'])
+                (row['timestamp'].to_pydatetime(), int(row['editor_count']), row['project'])
             )
         except Exception as e:
             logging.error(f"DB insert failed for {project}: {e}")
             continue
 
-logging.info("All data saved successfully.")
+logging.info("All editor data saved successfully.")
 
 # --- Cleanup ---
 cursor.close()

@@ -277,11 +277,22 @@
             </div>
         </div>
 
-        <!-- Main Content Section -->
-        <div id="mainContent" class="flex-1 p-6">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
-            </div>
+       <div class="relative flex-1 p-6">
+    {% if user %}
+        <!-- Logout Button -->
+        <a href="{{ fbae_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogOut</a>
+    {% else %}
+        <!-- Login Button -->
+        <a href="{{ base_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogIn</a>
+    {% endif %}
+
+
+    <!-- Centered Heading -->
+    <div class="text-center mb-6">
+        <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
+    </div>
+</div>
+
 
             {% if data %}
             <div class="mb-6">
@@ -325,8 +336,12 @@
             {% endif %}
         </div>
 
-
-
+            {% if chart %}
+            <div class="mt-4" id="chartContainer">
+                {{ chart|safe }}
+            </div>
+            {% endif %}
+       
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
             class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
@@ -391,8 +406,19 @@
             </div>
         </div>
     </div>
+    <script> 
 
-    <script>
+        const base_url = "{{ base_url }}";  // This becomes something like "/wikimedia"
+
+        // Now you can use it like Python's f"{base_url}/logout"
+        const logoutUrl = `${base_url}/logout`;
+        const loginUrl = `${base_url}/login`;
+
+        // Example: redirect
+        function goToLogout() {
+            window.location.href = logoutUrl;
+        }
+
         const rawLanguages = {{ languages | tojson | safe }};
 
         // Transform data structure for the new dropdown
@@ -406,8 +432,11 @@
                 projectTypes.add(sitename);
             });
         });
+        // Create project data structure
+        Array.from(projectTypes).forEach(projectType => {
+            projectData[projectType] = {
+                name: projectType.charAt(0).toUpperCase() + projectType.slice(1),
 
-        // Create project data structure with proper naming
         const projectNameMap = {
             'wiki': 'Wikipedia',
             'wiktionary': 'Wiktionary',
@@ -546,6 +575,7 @@
 
             closeDropdown() {
                 this.dropdown.classList.add('hidden');
+                this.input.setAttribute('readonly', '');
                 // Only set readonly if we have a final selection
                 if (this.selectedLanguage) {
                     this.input.setAttribute('readonly', '');
@@ -622,6 +652,7 @@
                         this.searchTerm = '';
                         this.input.value = '';
                         this.input.placeholder = 'Search projects...';
+
                         this.showProjects();
                     });
                 }
@@ -642,6 +673,7 @@
                 this.searchTerm = '';
                 this.input.value = '';
                 this.input.placeholder = `Search ${this.data[projectKey].name} languages...`;
+
                 this.input.removeAttribute('readonly'); // Keep input editable for language search
                 this.showLanguages();
             }
@@ -1005,13 +1037,11 @@
                                 .then(data => {
                                     const input = hoverInput.querySelector('input');
                                     input.value = data.label || '';
-
                                     // Position relative to chart container with scroll offset
                                     const updatedChartRect = plotDiv.getBoundingClientRect();
                                     hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
                                     hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
                                     hoverInput.style.display = 'flex';
-
                                     // Focus the input and move cursor to end
                                     setTimeout(() => {
                                         input.focus();
@@ -1043,6 +1073,7 @@
                     });
 
                     plotDiv.on('plotly_click', function (data) {
+
                         const point = data.points[0];
                         if (point.curveNumber === 1) { // Peaks are the second trace
                             const customData = point.customdata;
