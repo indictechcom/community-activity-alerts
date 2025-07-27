@@ -63,6 +63,158 @@
             transform: translateX(-50%);
             transition: all 0.1s ease;
         }
+
+        /* Project Selector Styles */
+        .project-selector-input-container {
+            position: relative;
+        }
+
+        .project-selector-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 50;
+            max-height: 300px;
+            overflow-y: auto;
+            animation: dropdownFadeIn 0.15s ease-out;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .project-selector-list {
+            padding: 0.5rem 0;
+        }
+
+        .project-selector-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .project-selector-item:hover,
+        .project-selector-item.highlighted {
+            background-color: #f9fafb;
+            border-left-color: #10b981;
+        }
+
+        .project-selector-item.selected {
+            background-color: #ffe1ee;
+            border-left-color: #ec4899;
+        }
+
+        .project-selector-item-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .project-selector-item-title {
+            font-weight: 500;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-selector-item-subtitle {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-selector-arrow {
+            margin-left: 0.5rem;
+            color: #9ca3af;
+            transition: transform 0.15s ease;
+        }
+
+        .project-selector-item:hover .project-selector-arrow {
+            transform: translateX(2px);
+        }
+
+        .project-selector-separator {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 0.5rem 0;
+        }
+
+        .project-selector-back {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            color: #374151;
+            transition: background-color 0.15s ease;
+        }
+
+        .project-selector-back:hover {
+            background-color: #f3f4f6;
+        }
+
+        .project-selector-back-arrow {
+            margin-right: 0.5rem;
+            transition: transform 0.15s ease;
+        }
+
+        .project-selector-back:hover .project-selector-back-arrow {
+            transform: translateX(-2px);
+        }
+
+        .project-selector-loading {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .project-selector-no-results {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .project-selector-dropdown {
+                max-height: 250px;
+            }
+
+            .project-selector-item {
+                padding: 0.625rem 0.75rem;
+            }
+
+            .project-selector-item-title {
+                font-size: 0.875rem;
+            }
+
+            .project-selector-item-subtitle {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 
@@ -73,21 +225,27 @@
             <div class="sidebar-content p-4 pt-16">
                 <h2 class="text-2xl font-bold mb-4">Filters</h2>
 
-                <!-- Language and Project Group Search -->
-                <div class="flex flex-col space-y-6 mb-6">
-                    <select id="languageDropdown"
-                        class="w-full rounded-md mb-4 px-4 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option value="">Select a Language</option>
-                        {% for language, communities in languages.items() %}
-                        <option value="{{ language }}">{{ language }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <select id="ProjectGroupDropdown"
-                        class="w-full rounded-md mb-4 px-4 py-2 border focus:outline-none focus:ring-2 focus:ring-green-500"
-                        disabled>
-                        <option value="">Select a Project Group</option>
-                    </select>
+                <!-- Two-Step Project Selector -->
+                <div class="mb-6">
+                    <div id="projectSelector" class="relative">
+                        <div class="project-selector-input-container">
+                            <input type="text" id="projectSelectorInput"
+                                class="w-full rounded-md px-4 py-2 pr-10 border focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Search projects..." autocomplete="off" readonly>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="projectSelectorDropdown" class="project-selector-dropdown hidden">
+                            <div class="project-selector-list" id="projectSelectorList">
+                                <!-- Dynamic content will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-6">
@@ -119,18 +277,29 @@
             </div>
         </div>
 
-        <!-- Main Content Section -->
-        <div id="mainContent" class="flex-1 p-6">
-            <div class="text-center mb-6">
-                <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
-            </div>
+       <div class="relative flex-1 p-6">
+    {% if user %}
+        <!-- Logout Button -->
+        <a href="{{ fbae_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogOut</a>
+    {% else %}
+        <!-- Login Button -->
+        <a href="{{ base_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogIn</a>
+    {% endif %}
+
+
+    <!-- Centered Heading -->
+    <div class="text-center mb-6">
+        <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
+    </div>
+</div>
+
 
             {% if data %}
             <div class="mb-6">
                 <h2 class="text-2xl text-center font-semibold">{{ data|length }} {{ 'Result' if data|length == 1 else
                     'Results' }} Found</h2>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto mb-8">
                 <table class="min-w-full bg-white border border-gray-300">
                     <thead>
                         <tr class="bg-gray-200">
@@ -154,17 +323,14 @@
                     </tbody>
                 </table>
             </div>
-            {% else %}
-            <div class="text-center text-gray-500">
-                <p>No data available to display.</p>
+            {% endif %}
+
+            {% if chart %}
+            <div class="mt-4" id="chartContainer">
+                {{ chart|safe }}
             </div>
             {% endif %}
-        </div>
-
-        {% if chart %}
-        <div>{{ chart|safe }}</div>
-        {% endif %}
-
+       
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
             class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
@@ -230,34 +396,292 @@
         </div>
     </div>
 
-    <script>
-        const languages = {{ languages | tojson | safe }};
-        const languageDropdown = document.getElementById("languageDropdown");
-        const ProjectGroupDropdown = document.getElementById("ProjectGroupDropdown");
-        const selectedProjectGroupDiv = document.getElementById("selectedProjectGroup");
+    <script> 
+
+        const base_url = "{{ base_url }}";  // This becomes something like "/wikimedia"
+
+        // Now you can use it like Python's f"{base_url}/logout"
+        const logoutUrl = `${base_url}/logout`;
+        const loginUrl = `${base_url}/login`;
+
+        // Example: redirect
+        function goToLogout() {
+            window.location.href = logoutUrl;
+        }
+
+        const rawLanguages = {{ languages | tojson | safe }};
+
+        // Transform data structure for the new dropdown
+        const projectData = {};
+
+        // Extract unique project types from the data
+        const projectTypes = new Set();
+        Object.values(rawLanguages).forEach(communities => {
+            communities.forEach(community => {
+                const sitename = community.sitename;
+                projectTypes.add(sitename);
+            });
+        });
+
+        // Create project data structure
+        Array.from(projectTypes).forEach(projectType => {
+            projectData[projectType] = {
+                name: projectType.charAt(0).toUpperCase() + projectType.slice(1),
+                languages: []
+            };
+        });
+
+        // Populate languages for each project
+        Object.entries(rawLanguages).forEach(([languageName, communities]) => {
+            communities.forEach(community => {
+                const projectType = community.sitename;
+                if (projectData[projectType]) {
+                    projectData[projectType].languages.push({
+                        code: languageName,
+                        name: languageName,
+                        url: community.url
+                    });
+                }
+            });
+        });
+
+        // Two-Step Project Selector Class
+        class TwoStepProjectSelector {
+            constructor(containerId, data, callback) {
+                this.container = document.getElementById(containerId);
+                this.data = data;
+                this.callback = callback;
+                this.currentStep = 'projects';
+                this.selectedProject = null;
+                this.selectedLanguage = null;
+                this.highlightedIndex = -1;
+                this.searchTerm = '';
+                this.debounceTimer = null;
+
+                this.input = this.container.querySelector('#projectSelectorInput');
+                this.dropdown = this.container.querySelector('#projectSelectorDropdown');
+                this.list = this.container.querySelector('#projectSelectorList');
+
+                this.init();
+            }
+
+            init() {
+                this.input.addEventListener('click', () => this.toggleDropdown());
+                this.input.addEventListener('input', (e) => this.handleSearch(e.target.value));
+                this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+
+                document.addEventListener('click', (e) => {
+                    if (!this.container.contains(e.target)) {
+                        this.closeDropdown();
+                    }
+                });
+
+                this.showProjects();
+            }
+
+            debounce(func, wait) {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(func, wait);
+            }
+
+            handleSearch(term) {
+                this.searchTerm = term.toLowerCase();
+                this.debounce(() => {
+                    if (this.currentStep === 'projects') {
+                        this.showProjects();
+                    } else {
+                        this.showLanguages();
+                    }
+                }, 150);
+            }
+
+            handleKeydown(e) {
+                const items = this.list.querySelectorAll('.project-selector-item:not(.project-selector-back)');
+
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        this.highlightedIndex = Math.min(this.highlightedIndex + 1, items.length - 1);
+                        this.updateHighlight();
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
+                        this.updateHighlight();
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        if (this.highlightedIndex >= 0 && items[this.highlightedIndex]) {
+                            items[this.highlightedIndex].click();
+                        }
+                        break;
+                    case 'Escape':
+                        this.closeDropdown();
+                        break;
+                }
+            }
+
+            updateHighlight() {
+                const items = this.list.querySelectorAll('.project-selector-item:not(.project-selector-back)');
+                items.forEach((item, index) => {
+                    item.classList.toggle('highlighted', index === this.highlightedIndex);
+                });
+            }
+
+            toggleDropdown() {
+                if (this.dropdown.classList.contains('hidden')) {
+                    this.openDropdown();
+                } else {
+                    this.closeDropdown();
+                }
+            }
+
+            openDropdown() {
+                this.input.removeAttribute('readonly');
+                this.dropdown.classList.remove('hidden');
+                this.input.focus();
+            }
+
+            closeDropdown() {
+                this.dropdown.classList.add('hidden');
+                this.input.setAttribute('readonly', '');
+                this.highlightedIndex = -1;
+            }
+
+            showProjects() {
+                this.currentStep = 'projects';
+                const filteredProjects = Object.entries(this.data).filter(([key, project]) =>
+                    project.name.toLowerCase().includes(this.searchTerm)
+                );
+
+                if (filteredProjects.length === 0) {
+                    this.list.innerHTML = '<div class="project-selector-no-results">No projects found</div>';
+                    return;
+                }
+
+                this.list.innerHTML = filteredProjects.map(([key, project]) => `
+                    <div class="project-selector-item" data-project="${key}">
+                        <div class="project-selector-item-main">
+                            <div class="project-selector-item-title">${project.name}</div>
+                            <div class="project-selector-item-subtitle">${project.languages.length} languages available</div>
+                        </div>
+                        <div class="project-selector-arrow">→</div>
+                    </div>
+                `).join('');
+
+                this.list.querySelectorAll('.project-selector-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const projectKey = item.dataset.project;
+                        this.selectProject(projectKey);
+                    });
+                });
+            }
+
+            showLanguages() {
+                this.currentStep = 'languages';
+                const project = this.data[this.selectedProject];
+                const filteredLanguages = project.languages.filter(lang =>
+                    lang.name.toLowerCase().includes(this.searchTerm)
+                );
+
+                let html = `
+                    <div class="project-selector-back">
+                        <span class="project-selector-back-arrow">←</span>
+                        Back to projects
+                    </div>
+                `;
+
+                if (filteredLanguages.length === 0) {
+                    html += '<div class="project-selector-no-results">No languages found</div>';
+                } else {
+                    html += filteredLanguages.map(lang => `
+                        <div class="project-selector-item" data-language="${lang.code}" data-url="${lang.url}">
+                            <div class="project-selector-item-main">
+                                <div class="project-selector-item-title">${lang.name}</div>
+                                <div class="project-selector-item-subtitle">${project.name} - ${lang.name}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                this.list.innerHTML = html;
+
+                const backButton = this.list.querySelector('.project-selector-back');
+                if (backButton) {
+                    backButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.selectedProject = null;
+                        this.searchTerm = '';
+                        this.input.value = '';
+                        this.showProjects();
+                    });
+                }
+
+                this.list.querySelectorAll('.project-selector-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const languageCode = item.dataset.language;
+                        const url = item.dataset.url;
+                        this.selectLanguage(languageCode, url);
+                    });
+                });
+            }
+
+            selectProject(projectKey) {
+                this.selectedProject = projectKey;
+                this.searchTerm = '';
+                this.input.value = '';
+                this.input.placeholder = `Search ${this.data[projectKey].name} languages...`;
+                this.showLanguages();
+            }
+
+            selectLanguage(languageCode, url) {
+                this.selectedLanguage = languageCode;
+                const project = this.data[this.selectedProject];
+                const language = project.languages.find(l => l.code === languageCode);
+
+                this.input.value = `${project.name} – ${language.name}`;
+                this.input.placeholder = 'Search projects...';
+                this.closeDropdown();
+
+                if (this.callback) {
+                    this.callback({
+                        project: this.selectedProject,
+                        projectName: project.name,
+                        language: languageCode,
+                        languageName: language.name,
+                        url: url
+                    });
+                }
+            }
+
+            reset() {
+                this.selectedProject = null;
+                this.selectedLanguage = null;
+                this.currentStep = 'projects';
+                this.searchTerm = '';
+                this.input.value = '';
+                this.input.placeholder = 'Search projects...';
+                this.closeDropdown();
+            }
+        }
+
+        // Initialize the selector
+        let selectedProjectData = null;
+        const projectSelector = new TwoStepProjectSelector('projectSelector', projectData, (selection) => {
+            selectedProjectData = selection;
+            console.log('Selected:', selection);
+        });
+
         const toggleSidebarButton = document.getElementById("toggleSidebar");
         const sidebar = document.getElementById("sidebar");
         const collapseIcon = document.getElementById("collapseIcon");
         const expandIcon = document.getElementById("expandIcon");
         let isCollapsed = false;
-
-        languageDropdown.addEventListener("change", () => {
-            const selectedLanguage = languageDropdown.value;
-            ProjectGroupDropdown.innerHTML = '<option value="">Select a Project Group</option>';
-
-            if (selectedLanguage && languages[selectedLanguage]) {
-                const communities = languages[selectedLanguage];
-                communities.forEach(ProjectGroup => {
-                    const option = document.createElement("option");
-                    option.value = ProjectGroup.url;
-                    option.textContent = ProjectGroup.sitename;
-                    ProjectGroupDropdown.appendChild(option);
-                });
-                ProjectGroupDropdown.disabled = false;
-            } else {
-                ProjectGroupDropdown.disabled = true;
-            }
-        });
 
 
         const filterEdits = document.getElementById("filterEdits");
@@ -391,16 +815,18 @@
 
         // Search functionality
         function search() {
-            const language = languageDropdown.value;
-            const projectGroup = ProjectGroupDropdown.value;
-            // TODO: Get startValue and endValue from the dateModal
+            if (!selectedProjectData) {
+                alert('Please select a project and language first.');
+                return;
+            }
+
             const startDate = getDateFromValue(startValue);
             const endDate = getDateFromValue(endValue);
             const editsFilter = filterEdits.checked;
             const usersFilter = filterUsers.checked;
 
             // Load the new URL
-            window.location.href = `?language=${language}&project_group=${projectGroup}&datestart=${startDate}&dateend=${endDate}&filter_edits=${editsFilter}&filter_users=${usersFilter}`;
+            window.location.href = `?language=${selectedProjectData.languageName}&project_group=${selectedProjectData.url}&datestart=${startDate}&dateend=${endDate}&filter_edits=${editsFilter}&filter_users=${usersFilter}`;
         }
 
         document.getElementById('submitButton').addEventListener('click', search);
@@ -409,20 +835,30 @@
         document.addEventListener("DOMContentLoaded", () => {
             const urlParams = new URLSearchParams(window.location.search);
 
-            // Set language dropdown value
+            // Set project selector value
             const language = urlParams.get("language");
-            if (language) {
-                languageDropdown.value = language;
-                languageDropdown.dispatchEvent(new Event("change"));
-            }
-
-            // Set project group dropdown value
             const projectGroup = urlParams.get("project_group");
-            if (projectGroup) {
-                const projectGroupOption = Array.from(ProjectGroupDropdown.options).find(option => option.value === projectGroup);
-                if (projectGroupOption) {
-                    ProjectGroupDropdown.value = projectGroup;
-                    ProjectGroupDropdown.dispatchEvent(new Event("change"));
+
+            if (language && projectGroup) {
+                // Find the matching project and language
+                for (const [projectKey, project] of Object.entries(projectData)) {
+                    const matchingLang = project.languages.find(lang =>
+                        lang.name === language && lang.url === projectGroup
+                    );
+                    if (matchingLang) {
+                        selectedProjectData = {
+                            project: projectKey,
+                            projectName: project.name,
+                            language: matchingLang.code,
+                            languageName: matchingLang.name,
+                            url: matchingLang.url
+                        };
+
+                        // Update the input display
+                        document.getElementById('projectSelectorInput').value =
+                            `${project.name} – ${matchingLang.name}`;
+                        break;
+                    }
                 }
             }
 
@@ -443,6 +879,180 @@
             const filterUsersValue = urlParams.get("filter_users");
             if (filterUsersValue === "true") {
                 filterUsers.checked = true;
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const chartContainer = document.getElementById('chartContainer');
+            if (chartContainer) {
+                const plotDiv = chartContainer.querySelector('.plotly-graph-div');
+                if (plotDiv) {
+                    let hoverInput = null;
+                    let isInputActive = false;
+                    let currentProject = null;
+                    let currentTimestamp = null;
+
+                    plotDiv.on('plotly_hover', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            currentProject = customData.project;
+                            currentTimestamp = customData.timestamp;
+
+                            if (!hoverInput) {
+                                hoverInput = document.createElement('div');
+                                hoverInput.style.position = 'absolute';
+                                hoverInput.style.backgroundColor = 'white';
+                                hoverInput.style.border = '1px solid #ccc';
+                                hoverInput.style.padding = '3px';
+                                hoverInput.style.zIndex = '1000';
+                                hoverInput.style.display = 'flex';
+                                hoverInput.style.alignItems = 'center';
+                                hoverInput.style.borderRadius = '4px';
+                                hoverInput.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+                                const input = document.createElement('input');
+                                input.type = 'text';
+                                input.placeholder = 'Enter label...';
+                                input.style.marginRight = '5px';
+                                input.style.border = '1px solid #ddd';
+                                input.style.padding = '2px 4px';
+
+                                const saveButton = document.createElement('button');
+                                saveButton.textContent = 'Save';
+                                saveButton.style.marginRight = '5px';
+                                saveButton.style.padding = '2px 8px';
+                                saveButton.style.backgroundColor = '#4CAF50';
+                                saveButton.style.color = 'white';
+                                saveButton.style.border = 'none';
+                                saveButton.style.borderRadius = '2px';
+                                saveButton.style.cursor = 'pointer';
+
+                                const saveLabel = () => {
+                                    const label = input.value;
+                                    fetch('/api/update_peak_label', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert('Label updated successfully!');
+                                            hoverInput.style.display = 'none';
+                                            isInputActive = false;
+                                            // Optionally reload to show updated chart
+                                            window.location.reload();
+                                        } else {
+                                            alert('Error updating label: ' + data.error);
+                                        }
+                                    });
+                                };
+
+                                input.addEventListener('keypress', (e) => {
+                                    if (e.key === 'Enter') {
+                                        saveLabel();
+                                    }
+                                });
+
+                                saveButton.addEventListener('click', saveLabel);
+
+                                const closeButton = document.createElement('button');
+                                closeButton.textContent = '×';
+                                closeButton.style.marginLeft = '5px';
+                                closeButton.style.padding = '2px 6px';
+                                closeButton.style.backgroundColor = '#f44336';
+                                closeButton.style.color = 'white';
+                                closeButton.style.border = 'none';
+                                closeButton.style.borderRadius = '2px';
+                                closeButton.style.cursor = 'pointer';
+
+                                closeButton.addEventListener('click', () => {
+                                    hoverInput.style.display = 'none';
+                                    isInputActive = false;
+                                });
+
+                                hoverInput.appendChild(input);
+                                hoverInput.appendChild(saveButton);
+                                hoverInput.appendChild(closeButton);
+                                document.body.appendChild(hoverInput);
+
+                                // Prevent input box from disappearing when interacting with it
+                                hoverInput.addEventListener('mouseenter', () => {
+                                    isInputActive = true;
+                                });
+                                hoverInput.addEventListener('mouseleave', () => {
+                                    isInputActive = false;
+                                });
+                            }
+
+                            // Get chart container position for relative positioning
+                            const chartRect = plotDiv.getBoundingClientRect();
+                            const relativeX = data.event.clientX - chartRect.left;
+                            const relativeY = data.event.clientY - chartRect.top;
+
+                            // Fetch existing label
+                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const input = hoverInput.querySelector('input');
+                                    input.value = data.label || '';
+                                    
+                                    // Position relative to chart container with scroll offset
+                                    const updatedChartRect = plotDiv.getBoundingClientRect();
+                                    hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
+                                    hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
+                                    hoverInput.style.display = 'flex';
+                                    
+                                    // Focus the input and move cursor to end
+                                    setTimeout(() => {
+                                        input.focus();
+                                        input.setSelectionRange(input.value.length, input.value.length);
+                                    }, 100);
+                                });
+
+                            // Initial positioning relative to chart with scroll offset
+                            hoverInput.style.left = `${chartRect.left + relativeX + window.pageXOffset}px`;
+                            hoverInput.style.top = `${chartRect.top + relativeY + window.pageYOffset}px`;
+                            hoverInput.style.display = 'flex';
+                            isInputActive = true;
+                        }
+                    });
+
+                    plotDiv.on('plotly_unhover', () => {
+                        setTimeout(() => {
+                            if (!isInputActive && hoverInput) {
+                                hoverInput.style.display = 'none';
+                            }
+                        }, 200);
+                    });
+
+                    document.addEventListener('click', (event) => {
+                        if (hoverInput && !hoverInput.contains(event.target)) {
+                            hoverInput.style.display = 'none';
+                            isInputActive = false;
+                        }
+                    });
+
+                    plotDiv.on('plotly_click', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            const project = customData.project;
+                            const timestamp = customData.timestamp;
+
+                            fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    // if (data.label) {
+                                    //     alert(`Existing Label: ${data.label}`);
+                                    // } else {
+                                    //     alert('No label found for this peak.');
+                                    // }
+                                });
+                        }
+                    });
+                }
             }
         });
 
