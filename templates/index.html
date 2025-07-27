@@ -4,18 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page_title or 'Wikimedia Communities Activity Logs' }}</title>
+    <title>Wikimedia Communities Activity Logs</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8f9fa;
-        }
-
         .sidebar-transition {
-            transition: all 0.3s ease;
-            background: white;
-            border-right: 1px solid #e1e5e9;
+            transition: all 1s ease;
         }
 
         .sidebar-collapsed {
@@ -25,10 +18,9 @@
         }
 
         .sidebar-content {
-            width: 18rem;
+            width: 16rem;
+            /* w-64 equivalent */
             transition: all 0.3s ease;
-            padding: 1.5rem;
-            padding-top: 4rem;
         }
 
         .sidebar-collapsed .sidebar-content {
@@ -37,53 +29,25 @@
         }
 
         .toggle-button {
-            transition: all 0.3s ease;
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-radius: 6px;
-            padding: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        .toggle-button:hover {
-            background: #f8f9fa;
-            border-color: #0645ad;
+            transition: transform 0.3s ease, left 0.3s ease;
         }
 
         .toggle-button.collapsed {
             left: 0.5rem;
         }
 
-        /* Wikimedia-style form elements */
-        .form-input,
-        .form-button {
-            border: 1px solid #a2a9b1;
-            border-radius: 2px;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
+        /* Custom select styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem !important;
         }
 
-        .form-input:focus {
-            border-color: #0645ad;
-            box-shadow: 0 0 0 1px #0645ad;
-            outline: none;
-        }
-
-        .form-button {
-            background: #0645ad;
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .form-button:hover {
-            background: #0b4ba0;
-        }
-
-        .form-button:disabled {
-            background: #c8ccd1;
-            cursor: not-allowed;
+        input[type="checkbox"]:checked {
+            accent-color: green;
         }
 
         #dateSlider {
@@ -100,7 +64,7 @@
             transition: all 0.1s ease;
         }
 
-        /* Wikimedia-style project selector */
+        /* Project Selector Styles */
         .project-selector-input-container {
             position: relative;
         }
@@ -111,9 +75,9 @@
             left: 0;
             right: 0;
             background: white;
-            border: 1px solid #a2a9b1;
-            border-top: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             z-index: 50;
             max-height: 300px;
             overflow-y: auto;
@@ -148,13 +112,13 @@
 
         .project-selector-item:hover,
         .project-selector-item.highlighted {
-            background-color: #eaf3ff;
-            border-left-color: #0645ad;
+            background-color: #f9fafb;
+            border-left-color: #10b981;
         }
 
         .project-selector-item.selected {
-            background-color: #eaf3ff;
-            border-left-color: #0645ad;
+            background-color: #ffe1ee;
+            border-left-color: #ec4899;
         }
 
         .project-selector-item-main {
@@ -198,17 +162,17 @@
         .project-selector-back {
             padding: 0.75rem 1rem;
             cursor: pointer;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e1e5e9;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
             font-weight: 500;
-            color: #0645ad;
+            color: #374151;
             transition: background-color 0.15s ease;
         }
 
         .project-selector-back:hover {
-            background-color: #eaf3ff;
+            background-color: #f3f4f6;
         }
 
         .project-selector-back-arrow {
@@ -233,161 +197,6 @@
             font-style: italic;
         }
 
-        /* Wikimedia-style content containers */
-        .content-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem 1rem;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eaecf0;
-        }
-
-        .page-title {
-            color: #222;
-            font-weight: 400;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-subtitle {
-            color: #72777d;
-            font-size: 1rem;
-        }
-
-        /* Wikimedia-style cards */
-        .wiki-card {
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-radius: 2px;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .wiki-card-header {
-            background: #f8f9fa;
-            border-bottom: 1px solid #e1e5e9;
-            padding: 1rem 1.5rem;
-            font-weight: 500;
-            color: #222;
-        }
-
-        .wiki-card-content {
-            padding: 1.5rem;
-        }
-
-        /* Filter section styling */
-        .filter-section {
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-radius: 2px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .filter-title {
-            color: #0645ad;
-            font-weight: 500;
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #eaecf0;
-            padding-bottom: 0.5rem;
-        }
-
-        /* Results section */
-        .results-section {
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .results-header {
-            background: #f8f9fa;
-            border-bottom: 1px solid #e1e5e9;
-            padding: 1rem 1.5rem;
-        }
-
-        .results-title {
-            color: #222;
-            font-weight: 500;
-            font-size: 1.25rem;
-            margin: 0;
-        }
-
-        .results-subtitle {
-            color: #72777d;
-            font-size: 0.875rem;
-            margin: 0.25rem 0 0 0;
-        }
-
-        /* Chart container */
-        #chartContainer {
-            background: white;
-            border: 1px solid #e1e5e9;
-            border-top: none;
-            padding: 1.5rem;
-            min-height: 550px;
-        }
-
-        #chartContainer .plotly-graph-div {
-            width: 100% !important;
-            height: 550px !important;
-        }
-
-        /* Table styling */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .data-table th {
-            background: #f8f9fa;
-            border: 1px solid #e1e5e9;
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-weight: 500;
-            color: #222;
-            font-size: 0.875rem;
-        }
-
-        .data-table td {
-            border: 1px solid #e1e5e9;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            color: #222;
-        }
-
-        .data-table tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-
-        .data-table tr:hover {
-            background: #eaf3ff;
-        }
-
-        /* Back link styling */
-        .back-link {
-            color: #0645ad;
-            text-decoration: none;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            transition: color 0.2s ease;
-        }
-
-        .back-link:hover {
-            color: #0b4ba0;
-            text-decoration: underline;
-        }
-
-
-
         /* Mobile responsive */
         @media (max-width: 640px) {
             .project-selector-dropdown {
@@ -405,20 +214,6 @@
             .project-selector-item-subtitle {
                 font-size: 0.75rem;
             }
-
-            #chartContainer {
-                min-height: 400px;
-                padding: 0.5rem;
-                margin-top: -8px;
-            }
-
-            #chartContainer .plotly-graph-div {
-                height: 400px !important;
-            }
-
-            #mainContent {
-                padding: 1rem;
-            }
         }
     </style>
 </head>
@@ -426,22 +221,16 @@
 <body class="bg-gray-100">
     <div class="flex h-screen">
         <!-- Sidebar on the left -->
-        <div id="sidebar" class="h-full sidebar-transition relative">
-            <div class="sidebar-content">
-                <!-- Back to Home Link -->
-                <div class="mb-6">
-                    <a href="/" class="back-link">
-                        ← Back to All Metrics
-                    </a>
-                </div>
-
-                <div class="filter-title">Filters</div>
+        <div id="sidebar" class="bg-white h-full shadow-lg sidebar-transition relative">
+            <div class="sidebar-content p-4 pt-16">
+                <h2 class="text-2xl font-bold mb-4">Filters</h2>
 
                 <!-- Two-Step Project Selector -->
                 <div class="mb-6">
                     <div id="projectSelector" class="relative">
                         <div class="project-selector-input-container">
-                            <input type="text" id="projectSelectorInput" class="form-input w-full px-3 py-2 pr-10"
+                            <input type="text" id="projectSelectorInput"
+                                class="w-full rounded-md px-4 py-2 pr-10 border focus:outline-none focus:ring-2 focus:ring-green-500"
                                 placeholder="Search projects..." autocomplete="off" readonly>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
@@ -460,7 +249,8 @@
                 </div>
 
                 <div class="mb-6">
-                    <button id="openDateModal" class="form-input w-full px-3 py-2 bg-white cursor-pointer">
+                    <button id="openDateModal"
+                        class="w-full border rounded-md px-4 py-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500">
                         Select Date Range
                     </button>
                 </div>
@@ -479,82 +269,67 @@
 
                 <!-- Submit Button -->
                 <div class="mt-4">
-                    <button id="submitButton" class="form-button w-full px-4 py-2">
-                        Analyze Data
+                    <button id="submitButton"
+                        class="w-full bg-green-500 text-white rounded-md px-4 py-2 hover:bg-green-600">
+                        Submit
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Main Content Section -->
-        <div id="mainContent" class="flex-1">
-            <div class="content-container">
-                <div class="page-header">
-                    <h1 class="page-title">{{ page_title or 'Wikimedia Communities Activity Logs' }}</h1>
-                    <p class="page-subtitle">{{ 'Analyze edit activity patterns and detect significant changes' if
-                        metric_type == 'edits' else 'Monitor editor participation and community engagement' }}</p>
-
-                </div>
-
-                {% if error %}
-                <div class="wiki-card">
-                    <div class="wiki-card-content text-center text-red-600">
-                        <p>{{ error }}</p>
-                    </div>
-                </div>
-                {% elif data %}
-
-                <div class="results-section">
-                    <div class="results-header">
-                        <h2 class="results-title">{{ data|length }} {{ 'Peak' if data|length == 1 else 'Peaks' }}
-                            Detected</h2>
-                        <p class="results-subtitle">Activity spikes above 30% of 3-year rolling average</p>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>{{ 'Edits' if metric_type == 'edits' else 'Editors' }}</th>
-                                    <th>Difference</th>
-                                    <th>Rolling Mean</th>
-                                    <th>Threshold</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for entry in data %}
-                                <tr>
-                                    <td>{{ entry.timestamp }}</td>
-                                    <td>{{ entry[metric_type] }}</td>
-                                    <td>{{ entry.percentage_difference }}%</td>
-                                    <td>{{ entry.rolling_mean }}</td>
-                                    <td>{{ entry.threshold }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                {% endif %}
-                {% if chart %}
-                <div id="chartContainer">
-                    {{ chart|safe }}
-                </div>
-                {% elif not data %}
-                <div class="wiki-card">
-                    <div class="wiki-card-content text-center text-gray-500">
-                        <p>No data available to display.</p>
-                        <p class="text-sm mt-2">Please select a project, language, and date range to analyze community
-                            activity.</p>
-                    </div>
-                </div>
-                {% endif %}
+        <div id="mainContent" class="flex-1 p-6">
+            <div class="text-center mb-6">
+                <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
             </div>
+
+            {% if data %}
+            <div class="mb-6">
+                <h2 class="text-2xl text-center font-semibold">{{ data|length }} {{ 'Result' if data|length == 1 else
+                    'Results' }} Found</h2>
+            </div>
+            <div class="overflow-x-auto mb-8">
+                <table class="min-w-full bg-white border border-gray-300">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="py-2 px-4 border-b text-left font-semibold">Timestamp</th>
+                            <th class="py-2 px-4 border-b text-left font-semibold">Edits</th>
+                            <th class="py-2 px-4 border-b text-left font-semibold">Difference</th>
+                            <th class="py-2 px-4 border-b text-left font-semibold">Rolling Mean</th>
+                            <th class="py-2 px-4 border-b text-left font-semibold">Threshold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in data %}
+                        <tr class="hover:bg-gray-100">
+                            <td class="py-2 px-4 border-b">{{ entry.timestamp }}</td>
+                            <td class="py-2 px-4 border-b">{{ entry.edits }}</td>
+                            <td class="py-2 px-4 border-b">{{ entry.percentage_difference }}%</td>
+                            <td class="py-2 px-4 border-b">{{ entry.rolling_mean }}</td>
+                            <td class="py-2 px-4 border-b">{{ entry.threshold }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if chart %}
+            <div class="mt-4" id="chartContainer">
+                {{ chart|safe }}
+            </div>
+            {% elif not data %}
+            <div class="text-center text-gray-500">
+                <p>No data available to display.</p>
+            </div>
+            {% endif %}
         </div>
+
+
 
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
-            class="toggle-button fixed left-4 top-4 text-gray-700 hover:text-gray-900 transition-colors">
+            class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
             <span id="collapseIcon" class="block">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"
                     class="collapse-icon">
@@ -623,20 +398,6 @@
         // Transform data structure for the new dropdown
         const projectData = {};
 
-        // Map site codes to display names
-        const siteCodeToName = {
-            'wiki': 'Wikipedia',
-            'wikibooks': 'Wikibooks',
-            'wikinews': 'Wikinews',
-            'wikiquote': 'Wikiquote',
-            'wikisource': 'Wikisource',
-            'wikiversity': 'Wikiversity',
-            'wikivoyage': 'Wikivoyage',
-            'wiktionary': 'Wiktionary'
-        };
-
-        const currentMetricType = "{{ metric_type }}";
-
         // Extract unique project types from the data
         const projectTypes = new Set();
         Object.values(rawLanguages).forEach(communities => {
@@ -646,16 +407,13 @@
             });
         });
 
-        // Create project data structure with proper display names
+        // Create project data structure
         Array.from(projectTypes).forEach(projectType => {
-            const displayName = siteCodeToName[projectType] || projectType.charAt(0).toUpperCase() + projectType.slice(1);
             projectData[projectType] = {
-                name: displayName,
+                name: projectType.charAt(0).toUpperCase() + projectType.slice(1),
                 languages: []
             };
         });
-
-
 
         // Populate languages for each project
         Object.entries(rawLanguages).forEach(([languageName, communities]) => {
@@ -712,11 +470,10 @@
 
             handleSearch(term) {
                 this.searchTerm = term.toLowerCase();
-
                 this.debounce(() => {
                     if (this.currentStep === 'projects') {
                         this.showProjects();
-                    } else if (this.currentStep === 'languages') {
+                    } else {
                         this.showLanguages();
                     }
                 }, 150);
@@ -813,8 +570,6 @@
                     lang.name.toLowerCase().includes(this.searchTerm)
                 );
 
-
-
                 let html = `
                     <div class="project-selector-back">
                         <span class="project-selector-back-arrow">←</span>
@@ -845,10 +600,6 @@
                         this.selectedProject = null;
                         this.searchTerm = '';
                         this.input.value = '';
-                        this.input.placeholder = 'Search projects...';
-                        // Ensure input is ready for typing
-                        this.input.removeAttribute('readonly');
-                        this.input.focus();
                         this.showProjects();
                     });
                 }
@@ -869,9 +620,6 @@
                 this.searchTerm = '';
                 this.input.value = '';
                 this.input.placeholder = `Search ${this.data[projectKey].name} languages...`;
-                // Ensure input is ready for typing
-                this.input.removeAttribute('readonly');
-                this.input.focus();
                 this.showLanguages();
             }
 
@@ -910,7 +658,7 @@
         let selectedProjectData = null;
         const projectSelector = new TwoStepProjectSelector('projectSelector', projectData, (selection) => {
             selectedProjectData = selection;
-
+            console.log('Selected:', selection);
         });
 
         const toggleSidebarButton = document.getElementById("toggleSidebar");
@@ -1058,10 +806,11 @@
 
             const startDate = getDateFromValue(startValue);
             const endDate = getDateFromValue(endValue);
+            const editsFilter = filterEdits.checked;
+            const usersFilter = filterUsers.checked;
 
-            // Navigate to the current metric type with new parameters
-            const baseUrl = currentMetricType === 'edits' ? '/edits' : '/editors';
-            window.location.href = `${baseUrl}?language=${selectedProjectData.languageName}&project_group=${selectedProjectData.url}&datestart=${startDate}&dateend=${endDate}`;
+            // Load the new URL
+            window.location.href = `?language=${selectedProjectData.languageName}&project_group=${selectedProjectData.url}&datestart=${startDate}&dateend=${endDate}&filter_edits=${editsFilter}&filter_users=${usersFilter}`;
         }
 
         document.getElementById('submitButton').addEventListener('click', search);
@@ -1117,7 +866,6 @@
             }
         });
 
-        // Peak labeling functionality
         document.addEventListener("DOMContentLoaded", () => {
             const chartContainer = document.getElementById('chartContainer');
             if (chartContainer) {
@@ -1128,7 +876,7 @@
                     let currentProject = null;
                     let currentTimestamp = null;
 
-                    plotDiv.on('plotly_hover', function (data) {
+                    plotDiv.on('plotly_hover', function(data) {
                         const point = data.points[0];
                         if (point.curveNumber === 1) { // Peaks are the second trace
                             const customData = point.customdata;
@@ -1169,24 +917,20 @@
                                     fetch('/api/update_peak_label', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            project: currentProject,
-                                            timestamp: currentTimestamp,
-                                            label: label,
-                                            metric_type: currentMetricType
-                                        }),
-                                    }).then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                alert('Label updated successfully!');
-                                                hoverInput.style.display = 'none';
-                                                isInputActive = false;
-                                                // Optionally reload to show updated chart
-                                                window.location.reload();
-                                            } else {
-                                                alert('Error updating label: ' + data.error);
-                                            }
-                                        });
+                                        body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            alert('Label updated successfully!');
+                                            hoverInput.style.display = 'none';
+                                            isInputActive = false;
+                                            // Optionally reload to show updated chart
+                                            window.location.reload();
+                                        } else {
+                                            alert('Error updating label: ' + data.error);
+                                        }
+                                    });
                                 };
 
                                 input.addEventListener('keypress', (e) => {
@@ -1194,6 +938,7 @@
                                         saveLabel();
                                     }
                                 });
+
                                 saveButton.addEventListener('click', saveLabel);
 
                                 const closeButton = document.createElement('button');
@@ -1205,6 +950,7 @@
                                 closeButton.style.border = 'none';
                                 closeButton.style.borderRadius = '2px';
                                 closeButton.style.cursor = 'pointer';
+
                                 closeButton.addEventListener('click', () => {
                                     hoverInput.style.display = 'none';
                                     isInputActive = false;
@@ -1230,18 +976,18 @@
                             const relativeY = data.event.clientY - chartRect.top;
 
                             // Fetch existing label
-                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}&metric_type=${currentMetricType}`)
+                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
                                 .then(response => response.json())
                                 .then(data => {
                                     const input = hoverInput.querySelector('input');
                                     input.value = data.label || '';
-
+                                    
                                     // Position relative to chart container with scroll offset
                                     const updatedChartRect = plotDiv.getBoundingClientRect();
                                     hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
                                     hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
                                     hoverInput.style.display = 'flex';
-
+                                    
                                     // Focus the input and move cursor to end
                                     setTimeout(() => {
                                         input.focus();
@@ -1269,6 +1015,25 @@
                         if (hoverInput && !hoverInput.contains(event.target)) {
                             hoverInput.style.display = 'none';
                             isInputActive = false;
+                        }
+                    });
+
+                    plotDiv.on('plotly_click', function(data) {
+                        const point = data.points[0];
+                        if (point.curveNumber === 1) { // Peaks are the second trace
+                            const customData = point.customdata;
+                            const project = customData.project;
+                            const timestamp = customData.timestamp;
+
+                            fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    // if (data.label) {
+                                    //     alert(`Existing Label: ${data.label}`);
+                                    // } else {
+                                    //     alert('No label found for this peak.');
+                                    // }
+                                });
                         }
                     });
                 }
