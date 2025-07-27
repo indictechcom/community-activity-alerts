@@ -6,17 +6,20 @@ import configparser
 import logging
 
 # --- Setup logging ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # --- DB config ---
 cfg = configparser.ConfigParser()
-cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
-user = cfg['client']['user']
-password = cfg['client']['password']
+cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
+user = cfg["client"]["user"]
+password = cfg["client"]["password"]
 
-DB_NAME = 's56391__community_alerts'
-SOURCE_TABLE = 'edit_counts'
-ALERTS_TABLE = 'community_alerts'
+DB_NAME = "s56391__community_alerts"
+SOURCE_TABLE = "edit_counts"
+ALERTS_TABLE = "community_alerts"
+
 
 # --- Function to detect peaks ---
 def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
@@ -27,7 +30,9 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
         t_i = df.at[i, "timestamp"]
         edits_i = df.at[i, "edit_count"]
 
-        window = df[(df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] <= t_i)]
+        window = df[
+            (df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] <= t_i)
+        ]
         if window.empty:
             continue
 
@@ -36,26 +41,29 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
         pct_diff = ((edits_i - rolling_mean) / rolling_mean) * 100
 
         if edits_i >= threshold:
-            peaks.append({
-                "timestamp": t_i,
-                "edit_count": edits_i,
-                "rolling_mean": rolling_mean,
-                "threshold": threshold,
-                "percentage_difference": pct_diff
-            })
+            peaks.append(
+                {
+                    "timestamp": t_i,
+                    "edit_count": edits_i,
+                    "rolling_mean": rolling_mean,
+                    "threshold": threshold,
+                    "percentage_difference": pct_diff,
+                }
+            )
 
     return peaks
+
 
 # --- Main logic ---
 def main():
     # Connect to DB
     conn = pymysql.connect(
-        host='tools.db.svc.wikimedia.cloud',
+        host="tools.db.svc.wikimedia.cloud",
         user=user,
         password=password,
         database=DB_NAME,
-        charset='utf8mb4',
-        autocommit=True
+        charset="utf8mb4",
+        autocommit=True,
     )
 
     # Ensure alerts table exists
@@ -74,7 +82,7 @@ def main():
 
     # Read full edit data
     df = pd.read_sql(f"SELECT * FROM {SOURCE_TABLE}", conn)
-    df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
 
     # Process each project
     for project, group in df.groupby("project"):
@@ -90,7 +98,8 @@ def main():
         with conn.cursor() as cursor:
             for peak in peaks:
                 try:
-                    cursor.execute(f"""
+                    cursor.execute(
+                        f"""
                         INSERT INTO {ALERTS_TABLE}
                         (project, timestamp, edit_count, rolling_mean, threshold, percentage_difference)
                         VALUES (%s, %s, %s, %s, %s, %s)
@@ -99,19 +108,24 @@ def main():
                             rolling_mean=VALUES(rolling_mean),
                             threshold=VALUES(threshold),
                             percentage_difference=VALUES(percentage_difference)
-                    """, (
-                        project,
-                        peak["timestamp"].to_pydatetime(),
-                        int(peak["edit_count"]),
-                        float(peak["rolling_mean"]),
-                        float(peak["threshold"]),
-                        float(peak["percentage_difference"])
-                    ))
+                    """,
+                        (
+                            project,
+                            peak["timestamp"].to_pydatetime(),
+                            int(peak["edit_count"]),
+                            float(peak["rolling_mean"]),
+                            float(peak["threshold"]),
+                            float(peak["percentage_difference"]),
+                        ),
+                    )
                 except Exception as e:
-                    logging.error(f"DB insert failed for {project} on {peak['timestamp']}: {e}")
+                    logging.error(
+                        f"DB insert failed for {project} on {peak['timestamp']}: {e}"
+                    )
 
     conn.close()
     logging.info("Peak detection completed for all projects.")
+
 
 # --- Run ---
 if __name__ == "__main__":
