@@ -28,6 +28,7 @@ nbformat==5.10.4
 nest-asyncio==1.6.0
 numpy==2.2.0
 packaging==24.2
+pandas==2.2.3
 parso==0.8.4
 platformdirs==4.3.6
 plotly==5.24.1
@@ -37,7 +38,7 @@ pure_eval==0.2.3
 Pygments==2.18.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
-#pywin32==308
+pywin32==308
 pyzmq==26.2.0
 referencing==0.35.1
 requests==2.32.3
