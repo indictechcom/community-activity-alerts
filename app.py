@@ -149,6 +149,22 @@ def index():
         peaks_raw = find_peaks_rolling_3_years(df, threshold_percentage=0.30)
         peaks = log_peaks(peaks_raw)
 
+        # --- Fetch labels for peaks ---
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        peak_labels = {}
+        
+        for peak in peaks:
+            try:
+                cursor.execute("SELECT label FROM community_alerts WHERE project = %s AND timestamp = %s", 
+                              (project, peak['timestamp']))
+                result = cursor.fetchone()
+                peak_labels[peak['timestamp']] = result[0] if result and result[0] else ''
+            except:
+                peak_labels[peak['timestamp']] = ''
+        
+        conn.close()
+
         # --- Generate plot ---
         fig = go.Figure()
         fig.add_trace(
@@ -163,13 +179,19 @@ def index():
 
         peak_timestamps = [peak["timestamp"] for peak in peaks]
         peak_values = [peak["edits"] for peak in peaks]
+        peak_labels_list = [peak_labels.get(peak['timestamp'], '') for peak in peaks]
+        
         fig.add_trace(
             go.Scatter(
                 x=peak_timestamps,
                 y=peak_values,
-                mode="markers",
+                mode="markers+text",
                 name="Peaks Above Threshold",
                 marker=dict(color="red", size=10, symbol="circle"),
+                text=peak_labels_list,
+                textposition="top center",
+                customdata=[{'project': project, 'timestamp': peak['timestamp']} for peak in peaks],
+                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>"
             )
         )
 
@@ -203,6 +225,51 @@ def search():
     ]
     return jsonify(filtered_communities)
 
+
+# --- API endpoint to update peak label ---
+@app.route('/api/update_peak_label', methods=['POST'])
+def update_peak_label():
+    data = request.json
+    project = data['project']
+    timestamp = data['timestamp']
+    label = data['label']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            UPDATE community_alerts 
+            SET label = %s 
+            WHERE project = %s AND timestamp = %s
+        """, (label, project, timestamp))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        conn.close()
+
+
+# --- API endpoint to get peak label ---
+@app.route('/api/get_peak_label', methods=['GET'])
+def get_peak_label():
+    project = request.args.get('project')
+    timestamp = request.args.get('timestamp')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT label FROM community_alerts WHERE project = %s AND timestamp = %s", 
+                      (project, timestamp))
+        result = cursor.fetchone()
+        label = result[0] if result else ''
+        return jsonify({'label': label})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     app.run(debug=False)
