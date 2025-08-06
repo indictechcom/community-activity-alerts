@@ -88,3 +88,9 @@ The web interface allows you to:
 - Set custom date ranges with an interactive slider
 - View detected activity peaks in both table and chart format
 - Click on chart peaks to add labels and annotations
+
+##  Anomaly Detection Improvements
+
+- Integrated advanced peak detection methods: STL, Prophet, and Signal Processing.
+- Documentation: [`anomaly_detection_methods.md`](./anomaly_detection_methods.md)
+- Code: [`polars_migration/advanced_anomaly_detection.py`](./polars_migration/advanced_anomaly_detection.py)
