@@ -13,16 +13,16 @@ app = Flask(__name__)
 
 # --- DB connection setup ---
 def get_db_connection():
-    cfg = configparser.ConfigParser()
-    cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
-    user = cfg["client"]["user"]
-    password = cfg["client"]["password"]
+    # cfg = configparser.ConfigParser()
+    # cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
+    # user = cfg["client"]["user"]
+    # password = cfg["client"]["password"]
 
     conn = pymysql.connect(
-        host="tools.db.svc.wikimedia.cloud",
-        user=user,
-        password=password,
-        database="s56391__community_alerts",
+        host="localhost",
+        user='wikim',
+        password='wikimedia',
+        database="community_alerts",
         charset="utf8mb4",
     )
     return conn
@@ -191,7 +191,7 @@ def index():
                 text=peak_labels_list,
                 textposition="top center",
                 customdata=[{'project': project, 'timestamp': peak['timestamp']} for peak in peaks],
-                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>"
+                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>",
             )
         )
 
