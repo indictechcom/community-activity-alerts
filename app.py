@@ -7,8 +7,19 @@ import configparser
 import plotly.graph_objects as go
 from plotly.io import to_html
 import calendar
+from flask_mwoauth import MWOAuth
+import os
 
 app = Flask(__name__)
+
+app.secret_key = os.getenv("SECRET_KEY")
+mwo_auth = MWOAuth(
+    base_url="https://meta.wikimedia.org/w",
+    consumer_key='bb94640209ef01e47cb568d4b37be708',
+    consumer_secret='8f55fd75db7cdf86ac369d059219ea19b12a3c45'
+)
+app.register_blueprint(mwo_auth.bp)
+base_url=os.getenv("BASE_URL")
 
 
 # --- DB connection setup ---
@@ -114,7 +125,12 @@ def index():
     filter_users = request.args.get("filter_users") == "true"
 
     if not (language and project_group and datestart and dateend):
-        return render_template("index.html", languages=get_all_communities())
+        return render_template(
+            "index.html",
+            languages=get_all_communities(),
+            user=mwo_auth.get_current_user(True),
+            base_url=base_url
+        )
 
     project = project_group.split(":/")[1][1:]  # e.g. "en.wikipedia.org"
     start = datetime.strptime(datestart, "%b %Y")
@@ -143,6 +159,8 @@ def index():
                 data=[],
                 chart=None,
                 message="No data available.",
+                user = mwo_auth.get_current_user(),
+                base_url=base_url
             )
 
         df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -213,7 +231,11 @@ def index():
         chart_html = to_html(fig, full_html=False, include_plotlyjs="cdn")
 
         return render_template(
-            "index.html", languages=get_all_communities(), data=peaks, chart=chart_html
+            "index.html", 
+            languages=get_all_communities(), 
+            data=peaks, chart=chart_html, 
+            user = mwo_auth.get_current_user(), 
+            base_url=base_url
         )
 
     except Exception as e:
@@ -243,22 +265,24 @@ def update_peak_label():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-
-    try:
-        cursor.execute(
-            """
-            UPDATE community_alerts 
-            SET label = %s 
-            WHERE project = %s AND timestamp = %s
-        """,
-            (label, project, timestamp),
-        )
-        conn.commit()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-    finally:
-        conn.close()
+    if mwo_auth.get_current_user(True):
+        try:
+            cursor.execute(
+                """
+                UPDATE community_alerts 
+                SET label = %s 
+                WHERE project = %s AND timestamp = %s
+            """,
+                (label, project, timestamp),
+            )
+            conn.commit()
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)})
+        finally:
+            conn.close()
+    else:
+        return jsonify({"error": "please login first"})
 
 
 # --- API endpoint to get peak label ---
