@@ -1,25 +1,15 @@
+import logging
 from flask import Flask, render_template, request, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
-import pandas as pd
+import polars as pl
 import pymysql
 import configparser
 import plotly.graph_objects as go
 from plotly.io import to_html
 import calendar
-from flask_mwoauth import MWOAuth
-import os
 
 app = Flask(__name__)
-
-app.secret_key = os.getenv("SECRET_KEY")
-mwo_auth = MWOAuth(
-    base_url="https://meta.wikimedia.org/w",
-    consumer_key='bb94640209ef01e47cb568d4b37be708',
-    consumer_secret='8f55fd75db7cdf86ac369d059219ea19b12a3c45'
-)
-app.register_blueprint(mwo_auth.bp)
-base_url=os.getenv("BASE_URL")
 
 
 # --- DB connection setup ---
@@ -65,27 +55,80 @@ def get_all_communities():
     return languages
 
 
-# --- Peak detection function ---
-def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
-    df = df.sort_values("timestamp").reset_index(drop=True)
-    peaks = []
+# --- Peak detection function (Polars version) ---
+def find_peaks_rolling_3_years_polars_optimized(df, threshold_percentage=0.30):
+    """
+    Polars implementation using rolling operations.
+    This approximates the 3-year window using rolling_mean with a time-based window.
+    """
+    df = df.sort("timestamp")
 
-    for i in range(len(df)):
-        t_i = df.at[i, "timestamp"]
-        edits_i = df.at[i, "edits"]
-
-        window = df[
-            (df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] <= t_i)
+    # Use Polars' time-based rolling window (3 years = ~1095 days)
+    df_with_rolling = df.with_columns(
+        [
+            pl.col("edits")
+            .rolling_mean_by("timestamp", window_size="3y")
+            .alias("rolling_mean")
         ]
-        if window.empty:
+    )
+
+    # Calculate threshold and percentage difference
+    df_with_metrics = df_with_rolling.with_columns(
+        [
+            (pl.col("rolling_mean") * (1 + threshold_percentage)).alias("threshold"),
+            (
+                (pl.col("edits") - pl.col("rolling_mean"))
+                / pl.col("rolling_mean")
+                * 100
+            ).alias("percentage_difference"),
+        ]
+    )
+
+    # Filter for peaks
+    peaks_df = df_with_metrics.filter(
+        (pl.col("edits") >= pl.col("threshold"))
+        & (pl.col("rolling_mean").is_not_null())
+    )
+
+    return peaks_df.to_dicts() if not peaks_df.is_empty() else []
+
+
+def find_peaks_rolling_3_years_polars_exact(df, threshold_percentage=0.30):
+    """
+    Exact replica of the original pandas logic using Polars.
+    For each timestamp, calculates rolling mean of past 3 years of data.
+    """
+    df = df.sort("timestamp")
+    peaks_list = []
+
+    # Convert to list of dicts for easier processing
+    data = df.to_dicts()
+
+    for i, row in enumerate(data):
+        t_i = row["timestamp"]
+        edits_i = row["edits"]
+
+        # Create 3-year lookback window (same as pandas version)
+        three_years_ago = t_i - timedelta(days=3 * 365.25)
+
+        # Filter data for the window (from 3 years ago up to current timestamp)
+        window_data = [
+            r
+            for r in data[: i + 1]  # Only look at current and past data
+            if three_years_ago <= r["timestamp"] <= t_i
+        ]
+
+        if not window_data:
             continue
 
-        rolling_mean = window["edits"].mean()
+        # Calculate rolling mean for this window
+        edit_counts = [r["edits"] for r in window_data]
+        rolling_mean = sum(edit_counts) / len(edit_counts)
         threshold = rolling_mean * (1 + threshold_percentage)
         pct_diff = ((edits_i - rolling_mean) / rolling_mean) * 100
 
         if edits_i >= threshold:
-            peaks.append(
+            peaks_list.append(
                 {
                     "timestamp": t_i,
                     "edits": edits_i,
@@ -95,16 +138,45 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
                 }
             )
 
-    return peaks
+    return peaks_list
+
+
+# --- Peak detection function (main interface) ---
+def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
+    """
+    Main peak detection function that works with Polars DataFrames.
+    Maintains compatibility with the original pandas interface.
+    """
+    # Convert pandas DataFrame to Polars if needed
+    if hasattr(df, "to_pandas"):  # It's already a Polars DataFrame
+        polars_df = df
+    else:  # It's a pandas DataFrame, convert it
+        polars_df = pl.from_pandas(df)
+
+    # Ensure timestamp column is datetime
+    if polars_df.schema["timestamp"] != pl.Datetime:
+        polars_df = polars_df.with_columns(pl.col("timestamp").str.to_datetime())
+
+    # Use the optimized version for better performance
+    return find_peaks_rolling_3_years_polars_optimized(polars_df, threshold_percentage)
 
 
 # --- Format peaks for display ---
 def log_peaks(peaks):
+    """
+    Format peaks for display in the web interface.
+    """
     peaks_list = []
     for peak in peaks:
+        # Handle both datetime objects and strings
+        if isinstance(peak["timestamp"], str):
+            timestamp_str = peak["timestamp"]
+        else:
+            timestamp_str = peak["timestamp"].strftime("%Y-%m-%d")
+
         peaks_list.append(
             {
-                "timestamp": peak["timestamp"].strftime("%Y-%m-%d"),
+                "timestamp": timestamp_str,
                 "edits": int(peak["edits"]),
                 "rolling_mean": round(float(peak["rolling_mean"]), 2),
                 "threshold": round(float(peak["threshold"]), 2),
@@ -125,12 +197,7 @@ def index():
     filter_users = request.args.get("filter_users") == "true"
 
     if not (language and project_group and datestart and dateend):
-        return render_template(
-            "index.html",
-            languages=get_all_communities(),
-            user=mwo_auth.get_current_user(True),
-            base_url=base_url
-        )
+        return render_template("index.html", languages=get_all_communities())
 
     project = project_group.split(":/")[1][1:]  # e.g. "en.wikipedia.org"
     start = datetime.strptime(datestart, "%b %Y")
@@ -149,21 +216,30 @@ def index():
               AND timestamp BETWEEN %s AND %s
             ORDER BY timestamp ASC
         """
-        df = pd.read_sql(query, conn, params=(project, start, end))
+
+        # Fetch data using cursor for better compatibility
+        with conn.cursor() as cursor:
+            cursor.execute(query, (project, start, end))
+            results = cursor.fetchall()
+
         conn.close()
 
-        if df.empty:
+        if not results:
             return render_template(
                 "index.html",
                 languages=get_all_communities(),
                 data=[],
                 chart=None,
                 message="No data available.",
-                user = mwo_auth.get_current_user(),
-                base_url=base_url
             )
 
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        # Convert to Polars DataFrame
+        df = pl.DataFrame(results, schema=["timestamp", "edits"], orient="row")
+
+        # Ensure timestamp is datetime and timezone-aware
+        df = df.with_columns([pl.col("timestamp").dt.replace_time_zone("UTC")])
+
+        # Detect peaks using Polars
         peaks_raw = find_peaks_rolling_3_years(df, threshold_percentage=0.30)
         peaks = log_peaks(peaks_raw)
 
@@ -182,43 +258,53 @@ def index():
                 peak_labels[peak["timestamp"]] = (
                     result[0] if result and result[0] else ""
                 )
-            except:
+            except (pymysql.Error, KeyError, TypeError) as e:
+                logging.warning(
+                    f"Failed to fetch label for peak {peak['timestamp']}: {e}"
+                )
                 peak_labels[peak["timestamp"]] = ""
 
         conn.close()
 
         # --- Generate plot ---
         fig = go.Figure()
+
+        # Convert Polars DataFrame to pandas for plotting compatibility
+        df_pandas = df.to_pandas()
+
         fig.add_trace(
             go.Scatter(
-                x=df["timestamp"],
-                y=df["edits"],
+                x=df_pandas["timestamp"],
+                y=df_pandas["edits"],
                 mode="lines+markers",
                 name="Edits",
                 line=dict(color="blue"),
             )
         )
 
-        peak_timestamps = [peak["timestamp"] for peak in peaks]
-        peak_values = [peak["edits"] for peak in peaks]
-        peak_labels_list = [peak_labels.get(peak["timestamp"], "") for peak in peaks]
+        if peaks:
+            peak_timestamps = [peak["timestamp"] for peak in peaks]
+            peak_values = [peak["edits"] for peak in peaks]
+            peak_labels_list = [
+                peak_labels.get(peak["timestamp"], "") for peak in peaks
+            ]
 
-        fig.add_trace(
-            go.Scatter(
-                x=peak_timestamps,
-                y=peak_values,
-                mode="markers+text",
-                name="Peaks Above Threshold",
-                marker=dict(color="red", size=10, symbol="circle"),
-                text=peak_labels_list,
-                textposition="top center",
-                customdata=[
-                    {"project": project, "timestamp": peak["timestamp"]}
-                    for peak in peaks
-                ],
-                hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>",
+            fig.add_trace(
+                go.Scatter(
+                    x=peak_timestamps,
+                    y=peak_values,
+                    mode="markers+text",
+                    name="Peaks Above Threshold",
+                    marker=dict(color="red", size=10, symbol="circle"),
+                    text=peak_labels_list,
+                    textposition="top center",
+                    customdata=[
+                        {"project": project, "timestamp": peak["timestamp"]}
+                        for peak in peaks
+                    ],
+                    hovertemplate="<b>Peak</b><br>Date: %{x}<br>Edits: %{y}<br>",
+                )
             )
-        )
 
         fig.update_layout(
             title="Edits count over time with peaks (30% over 3-year rolling mean)",
@@ -231,11 +317,7 @@ def index():
         chart_html = to_html(fig, full_html=False, include_plotlyjs="cdn")
 
         return render_template(
-            "index.html", 
-            languages=get_all_communities(), 
-            data=peaks, chart=chart_html, 
-            user = mwo_auth.get_current_user(), 
-            base_url=base_url
+            "index.html", languages=get_all_communities(), data=peaks, chart=chart_html
         )
 
     except Exception as e:
@@ -265,24 +347,22 @@ def update_peak_label():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    if mwo_auth.get_current_user(True):
-        try:
-            cursor.execute(
-                """
-                UPDATE community_alerts 
-                SET label = %s 
-                WHERE project = %s AND timestamp = %s
-            """,
-                (label, project, timestamp),
-            )
-            conn.commit()
-            return jsonify({"success": True})
-        except Exception as e:
-            return jsonify({"success": False, "error": str(e)})
-        finally:
-            conn.close()
-    else:
-        return jsonify({"error": "please login first"})
+
+    try:
+        cursor.execute(
+            """
+            UPDATE community_alerts 
+            SET label = %s 
+            WHERE project = %s AND timestamp = %s
+        """,
+            (label, project, timestamp),
+        )
+        conn.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        conn.close()
 
 
 # --- API endpoint to get peak label ---
@@ -309,4 +389,4 @@ def get_peak_label():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)BB
+    app.run(debug=False)
