@@ -9,17 +9,22 @@ from plotly.io import to_html
 import calendar
 from flask_mwoauth import MWOAuth
 import os
+import urllib.parse
+from dotenv import load_dotenv
 
 app = Flask(__name__)
+
+load_dotenv()
 
 app.secret_key = os.getenv("SECRET_KEY")
 mwo_auth = MWOAuth(
     base_url="https://meta.wikimedia.org/w",
-    consumer_key='bb94640209ef01e47cb568d4b37be708',
-    consumer_secret='8f55fd75db7cdf86ac369d059219ea19b12a3c45'
+    consumer_key="bb94640209ef01e47cb568d4b37be708",
+    consumer_secret="8f55fd75db7cdf86ac369d059219ea19b12a3c45",
 )
 app.register_blueprint(mwo_auth.bp)
-base_url=os.getenv("BASE_URL")
+# Use configured BASE_URL if present; otherwise fall back to the MWOAuth blueprint base URL
+base_url = os.getenv("BASE_URL") or getattr(mwo_auth, "base_url", None)
 
 
 # --- DB connection setup ---
@@ -129,10 +134,15 @@ def index():
             "index.html",
             languages=get_all_communities(),
             user=mwo_auth.get_current_user(True),
-            base_url=base_url
+            base_url=base_url,
         )
 
-    project = project_group.split(":/")[1][1:]  # e.g. "en.wikipedia.org"
+    # project_group sent from client as f"{language}:/{domain}" URL-encoded; extract domain part safely
+    try:
+        decoded_pg = urllib.parse.unquote(project_group)
+        project = decoded_pg.split(":/", 1)[1]  # e.g. "en.wikipedia.org"
+    except Exception:
+        project = ""
     start = datetime.strptime(datestart, "%b %Y")
     end = datetime.strptime(dateend, "%b %Y")
     # Set start to first day, end to last day of month
@@ -159,8 +169,8 @@ def index():
                 data=[],
                 chart=None,
                 message="No data available.",
-                user = mwo_auth.get_current_user(),
-                base_url=base_url
+                user=mwo_auth.get_current_user(),
+                base_url=base_url,
             )
 
         df["timestamp"] = pd.to_datetime(df["timestamp"])
@@ -231,11 +241,12 @@ def index():
         chart_html = to_html(fig, full_html=False, include_plotlyjs="cdn")
 
         return render_template(
-            "index.html", 
-            languages=get_all_communities(), 
-            data=peaks, chart=chart_html, 
-            user = mwo_auth.get_current_user(), 
-            base_url=base_url
+            "index.html",
+            languages=get_all_communities(),
+            data=peaks,
+            chart=chart_html,
+            user=mwo_auth.get_current_user(),
+            base_url=base_url,
         )
 
     except Exception as e:
@@ -309,4 +320,6 @@ def get_peak_label():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    debug_env = os.getenv("DEBUG", "false")
+    debug = str(debug_env).strip().lower() == "true"
+    app.run(debug=debug)

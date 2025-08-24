@@ -18,8 +18,8 @@
         }
 
         .sidebar-content {
-            width: 16rem;
-            /* w-64 equivalent */
+            width: 20rem;
+            /* w-80 equivalent */
             transition: all 0.3s ease;
         }
 
@@ -222,126 +222,119 @@
     <div class="flex h-screen">
         <!-- Sidebar on the left -->
         <div id="sidebar" class="bg-white h-full shadow-lg sidebar-transition relative">
-            <div class="sidebar-content p-4 pt-16">
-                <h2 class="text-2xl font-bold mb-4">Filters</h2>
+            <div class="sidebar-content p-4 pt-16 space-y-6">
+                <h2 class="text-2xl font-bold">Filters</h2>
 
                 <!-- Two-Step Project Selector -->
-                <div class="mb-6">
-                    <div id="projectSelector" class="relative">
-                        <div class="project-selector-input-container">
-                            <input type="text" id="projectSelectorInput"
-                                class="w-full rounded-md px-4 py-2 pr-10 border focus:outline-none focus:ring-2 focus:ring-green-500"
-                                placeholder="Search projects..." autocomplete="off" readonly>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
+                <div id="projectSelector" class="relative">
+                    <div class="project-selector-input-container">
+                        <input type="text" id="projectSelectorInput"
+                            class="w-full rounded-md px-4 py-2 pr-10 border focus:outline-none focus:ring-2 focus:ring-green-500"
+                            placeholder="Search projects..." autocomplete="off">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
                         </div>
-                        <div id="projectSelectorDropdown" class="project-selector-dropdown hidden">
-                            <div class="project-selector-list" id="projectSelectorList">
-                                <!-- Dynamic content will be inserted here -->
-                            </div>
-                        </div>
+                    </div>
+                    <div id="projectSelectorDropdown" class="project-selector-dropdown hidden">
+                        <div class="project-selector-list" id="projectSelectorList"></div>
                     </div>
                 </div>
 
-                <div class="mb-6">
-                    <button id="openDateModal"
-                        class="w-full border rounded-md px-4 py-2 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500">
-                        Select Date Range
-                    </button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                    <div id="dateRangeDisplay"
+                        class="text-sm text-gray-800 bg-gray-50 border rounded px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors">
+                        —</div>
                 </div>
 
-                <!-- TODO -->
-                <!-- Filters Section -->
-                <div class="flex flex-col space-y-4"></div>
-                <div class="flex items-center hidden">
-                    <input type="checkbox" id="filterEdits" class="mr-2">
-                    <label for="filterEdits" class="text-md">Edits Count</label>
-                </div>
-                <div class="flex items-center hidden">
-                    <input type="checkbox" id="filterUsers" class="mr-2">
-                    <label for="filterUsers" class="text-md">Users Count</label>
+                <div class="space-y-2 hidden">
+                    <label class="inline-flex items-center space-x-2 text-sm">
+                        <input id="filterEdits" type="checkbox" class="h-4 w-4"> <span>Filter Edits</span>
+                    </label>
+                    <label class="inline-flex items-center space-x-2 text-sm">
+                        <input id="filterUsers" type="checkbox" class="h-4 w-4"> <span>Filter Users</span>
+                    </label>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="mt-4">
+                <div>
                     <button id="submitButton"
-                        class="w-full bg-green-500 text-white rounded-md px-4 py-2 hover:bg-green-600">
-                        Submit
-                    </button>
+                        class="w-full bg-green-600 text-white rounded px-4 py-2 hover:bg-green-700 transition-colors">Search</button>
                 </div>
             </div>
         </div>
 
-       <div class="relative flex-1 p-6">
-    {% if user %}
-        <!-- Logout Button -->
-        <a href="{{ fbae_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogOut</a>
-    {% else %}
-        <!-- Login Button -->
-        <a href="{{ base_url }}/logout" class="absolute top-6 right-6 bg-blue-500 text-white px-4 py-2 rounded">LogIn</a>
-    {% endif %}
+        <!-- Main Content Area -->
+        <div class="relative flex-1 p-6">
+            <!-- Login/Logout Button -->
+            {% if user %}
+            <a href="{{ base_url }}/logout"
+                class="absolute top-6 right-6 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">
+                Logout
+            </a>
+            {% else %}
+            <a href="{{ base_url }}/login"
+                class="absolute top-6 right-6 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">
+                Login
+            </a>
+            {% endif %}
+
+            <!-- Centered Heading -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800">Wikimedia Communities Activity Logs</h1>
+            </div>
+
+            <!-- No Data Message - placed below heading -->
+            {% if not data and not chart %}
+            <div class="text-center text-gray-500 mb-8">
+                <p class="text-lg">No data available to display.</p>
+                <p class="text-sm mt-2">Please select a project and date range, then click Submit to view activity data.
+                </p>
+            </div>
+            {% endif %}
 
 
-    <!-- Centered Heading -->
-    <div class="text-center mb-6">
-        <h1 class="text-4xl font-bold">Wikimedia Communities Activity Logs</h1>
-    </div>
-</div>
-
-
+            <!-- Results Section -->
             {% if data %}
             <div class="mb-6">
-                <h2 class="text-2xl text-center font-semibold">{{ data|length }} {{ 'Result' if data|length == 1 else
-                    'Results' }} Found</h2>
-            </div>
-            <div class="overflow-x-auto mb-8">
-                <table class="min-w-full bg-white border border-gray-300">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="py-2 px-4 border-b text-left font-semibold">Timestamp</th>
-                            <th class="py-2 px-4 border-b text-left font-semibold">Edits</th>
-                            <th class="py-2 px-4 border-b text-left font-semibold">Difference</th>
-                            <th class="py-2 px-4 border-b text-left font-semibold">Rolling Mean</th>
-                            <th class="py-2 px-4 border-b text-left font-semibold">Threshold</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entry in data %}
-                        <tr class="hover:bg-gray-100">
-                            <td class="py-2 px-4 border-b">{{ entry.timestamp }}</td>
-                            <td class="py-2 px-4 border-b">{{ entry.edits }}</td>
-                            <td class="py-2 px-4 border-b">{{ entry.percentage_difference }}%</td>
-                            <td class="py-2 px-4 border-b">{{ entry.rolling_mean }}</td>
-                            <td class="py-2 px-4 border-b">{{ entry.threshold }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <h2 class="text-2xl font-semibold mb-4">Detected Peaks</h2>
+                <div class="overflow-x-auto mb-8 border rounded bg-white shadow">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Date</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Edits</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Rolling Mean</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Threshold</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">% Diff</th>
+                                <th class="px-4 py-2 text-left font-medium text-gray-600">Label</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for row in data %}
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap">{{ row.timestamp }}</td>
+                                <td class="px-4 py-2">{{ row.edits }}</td>
+                                <td class="px-4 py-2">{{ row.rolling_mean }}</td>
+                                <td class="px-4 py-2">{{ row.threshold }}</td>
+                                <td class="px-4 py-2">{{ row.percentage_difference }}</td>
+                                <td class="px-4 py-2">{{ row.label or '' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {% endif %}
 
+            <!-- Chart Section -->
             {% if chart %}
-            <div class="mt-4" id="chartContainer">
-                {{ chart|safe }}
-            </div>
-            {% elif not data %}
-            <div class="text-center text-gray-500">
-                <p>No data available to display.</p>
-            </div>
+            <div class="mt-4" id="chartContainer">{{ chart|safe }}</div>
             {% endif %}
         </div>
 
-            {% if chart %}
-            <div class="mt-4" id="chartContainer">
-                {{ chart|safe }}
-            </div>
-            {% endif %}
-       
         <!-- Button to toggle sidebar -->
         <button id="toggleSidebar"
             class="toggle-button absolute left-4 top-6 text-gray-700 hover:text-gray-900 transition-colors z-10">
@@ -365,736 +358,224 @@
 
     <!-- Date Range Modal -->
     <div id="dateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-[30rem] relative">
             <h3 class="text-xl font-bold mb-4">Select Date Range</h3>
-
-            <div class="mb-6">
-                <div id="dateSlider" class="w-full h-2 bg-gray-200 rounded-lg relative">
-                    <div id="sliderTrack" class="absolute h-full bg-green-500 rounded-lg"></div>
-                    <div id="startHandle"
-                        class="absolute w-5 h-5 bg-white border-2 border-green-500 rounded-full cursor-pointer -mt-1.5">
-                    </div>
-                    <div id="endHandle"
-                        class="absolute w-5 h-5 bg-white border-2 border-green-500 rounded-full cursor-pointer -mt-1.5">
-                    </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="startMonth" class="block text-xs font-medium text-gray-600 mb-1">Start</label>
+                    <input type="month" id="startMonth" class="w-full border rounded px-2 py-2 text-sm" />
+                </div>
+                <div>
+                    <label for="endMonth" class="block text-xs font-medium text-gray-600 mb-1">End</label>
+                    <input type="month" id="endMonth" class="w-full border rounded px-2 py-2 text-sm" />
                 </div>
             </div>
-
-            <!-- Quick Pick Buttons -->
-            <div class="mb-6 flex flex-wrap gap-2">
-                <button class="quick-pick px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm" data-months="3">
-                    Last 3 Months
-                </button>
-                <button class="quick-pick px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm" data-months="6">
-                    Last 6 Months
-                </button>
-                <button class="quick-pick px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm" data-months="12">
-                    Last 1 Year
-                </button>
-                <button class="quick-pick px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm" data-months="60">
-                    Last 5 Years
-                </button>
-                <button class="quick-pick px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm" data-months="all">
-                    All Time
-                </button>
+            <div class="mb-4 flex flex-wrap gap-2">
+                <button class="quick-pick px-3 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    data-range="3m">Last 3 mo</button>
+                <button class="quick-pick px-3 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    data-range="6m">Last 6 mo</button>
+                <button class="quick-pick px-3 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    data-range="12m">Last 12 mo</button>
+                <button class="quick-pick px-3 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    data-range="all">All</button>
+                <button class="quick-pick px-3 py-1.5 text-xs bg-gray-100 rounded hover:bg-gray-200"
+                    data-range="ytd">YTD</button>
             </div>
-
             <div class="flex justify-end space-x-2">
-                <button id="closeDateModal" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
-                <button id="applyDateRange"
-                    class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Apply</button>
+                <button id="closeDateModal" type="button" class="px-4 py-2 text-sm rounded border">Cancel</button>
+                <button id="applyDateRange" type="button"
+                    class="px-4 py-2 text-sm rounded bg-green-600 text-white hover:bg-green-700">Apply</button>
             </div>
         </div>
     </div>
-    <script> 
+    <script id="languages-data" type="application/json">{{ languages | tojson | safe }}</script>
+    <script>
+        // Parse languages data injected as JSON
+        const rawLanguages = JSON.parse(document.getElementById('languages-data').textContent);
 
-        const base_url = "{{ base_url }}";  // This becomes something like "/wikimedia"
-
-        // Now you can use it like Python's f"{base_url}/logout"
-        const logoutUrl = `${base_url}/logout`;
-        const loginUrl = `${base_url}/login`;
-
-        // Example: redirect
-        function goToLogout() {
-            window.location.href = logoutUrl;
-        }
-
-        const rawLanguages = {{ languages | tojson | safe }};
-
-        // Transform data structure for the new dropdown
-        const projectData = {};
-
-        // Extract unique project types from the data
-        const projectTypes = new Set();
-        Object.values(rawLanguages).forEach(communities => {
-            communities.forEach(community => {
-                const sitename = community.sitename;
-                projectTypes.add(sitename);
-            });
-        });
-        // Create project data structure
-        Array.from(projectTypes).forEach(projectType => {
-            projectData[projectType] = {
-                name: projectType.charAt(0).toUpperCase() + projectType.slice(1),
-
-        const projectNameMap = {
-            'wiki': 'Wikipedia',
-            'wiktionary': 'Wiktionary',
-            'wikibooks': 'Wikibooks',
-            'wikinews': 'Wikinews',
-            'wikiquote': 'Wikiquote',
-            'wikisource': 'Wikisource',
-            'wikiversity': 'Wikiversity',
-            'wikivoyage': 'Wikivoyage'
-        };
-
-
-        Array.from(projectTypes).forEach(projectType => {
-            projectData[projectType] = {
-              name: projectNameMap[projectType] || projectType.charAt(0).toUpperCase + projectType.slice(1),
-                languages: []
-            };
-        });
-
-        // Populate languages for each project
-        Object.entries(rawLanguages).forEach(([languageName, communities]) => {
-            communities.forEach(community => {
-                const projectType = community.sitename;
-                if (projectData[projectType]) {
-                    projectData[projectType].languages.push({
-                        code: languageName,
-                        name: languageName,
-                        url: community.url
-                    });
-                }
-            });
-        });
-
-        // Two-Step Project Selector Class
-        class TwoStepProjectSelector {
-            constructor(containerId, data, callback) {
-                this.container = document.getElementById(containerId);
-                this.data = data;
-                this.callback = callback;
-                this.currentStep = 'projects';
-                this.selectedProject = null;
-                this.selectedLanguage = null;
-                this.highlightedIndex = -1;
-                this.searchTerm = '';
-                this.debounceTimer = null;
-
-                this.input = this.container.querySelector('#projectSelectorInput');
-                this.dropdown = this.container.querySelector('#projectSelectorDropdown');
-                this.list = this.container.querySelector('#projectSelectorList');
-
-                this.init();
-            }
-
-            init() {
-                this.input.addEventListener('click', () => this.toggleDropdown());
-                this.input.addEventListener('input', (e) => this.handleSearch(e.target.value));
-                this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
-
-                document.addEventListener('click', (e) => {
-                    if (!this.container.contains(e.target)) {
-                        this.closeDropdown();
-                    }
-                });
-
-                this.showProjects();
-            }
-
-            debounce(func, wait) {
-                clearTimeout(this.debounceTimer);
-                this.debounceTimer = setTimeout(func, wait);
-            }
-
-            handleSearch(term) {
-                this.searchTerm = term.toLowerCase();
-                this.highlightedIndex = -1; // Reset highlight when searching
-                this.debounce(() => {
-                    if (this.currentStep === 'projects') {
-                        this.showProjects();
-                    } else {
-                        this.showLanguages();
-                    }
-                }, 150);
-            }
-
-            handleKeydown(e) {
-                const items = this.list.querySelectorAll('.project-selector-item:not(.project-selector-back)');
-
-                switch (e.key) {
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        this.highlightedIndex = Math.min(this.highlightedIndex + 1, items.length - 1);
-                        this.updateHighlight();
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
-                        this.updateHighlight();
-                        break;
-                    case 'Enter':
-                        e.preventDefault();
-                        if (this.highlightedIndex >= 0 && items[this.highlightedIndex]) {
-                            items[this.highlightedIndex].click();
-                        }
-                        break;
-                    case 'Escape':
-                        this.closeDropdown();
-                        break;
-                }
-            }
-
-            updateHighlight() {
-                const items = this.list.querySelectorAll('.project-selector-item:not(.project-selector-back)');
-                items.forEach((item, index) => {
-                    item.classList.toggle('highlighted', index === this.highlightedIndex);
-                });
-            }
-
-            toggleDropdown() {
-                if (this.dropdown.classList.contains('hidden')) {
-                    this.openDropdown();
-                } else {
-                    this.closeDropdown();
-                }
-            }
-
-            openDropdown() {
-                this.input.removeAttribute('readonly');
-                this.dropdown.classList.remove('hidden');
-                this.input.focus();
-                // Clear search when opening dropdown if we're back to projects
-                if (this.currentStep === 'projects' && this.selectedProject === null) {
-                    this.input.value = '';
-                    this.searchTerm = '';
-                }
-            }
-
-            closeDropdown() {
-                this.dropdown.classList.add('hidden');
-                this.input.setAttribute('readonly', '');
-                // Only set readonly if we have a final selection
-                if (this.selectedLanguage) {
-                    this.input.setAttribute('readonly', '');
-                }
-                this.highlightedIndex = -1;
-            }
-
-            showProjects() {
-                this.currentStep = 'projects';
-                const filteredProjects = Object.entries(this.data).filter(([key, project]) =>
-                    project.name.toLowerCase().includes(this.searchTerm)
-                );
-
-                if (filteredProjects.length === 0) {
-                    this.list.innerHTML = '<div class="project-selector-no-results">No projects found</div>';
-                    return;
-                }
-
-                this.list.innerHTML = filteredProjects.map(([key, project]) => `
-                    <div class="project-selector-item" data-project="${key}">
-                        <div class="project-selector-item-main">
-                            <div class="project-selector-item-title">${project.name}</div>
-                            <div class="project-selector-item-subtitle">${project.languages.length} languages available</div>
-                        </div>
-                        <div class="project-selector-arrow">→</div>
-                    </div>
-                `).join('');
-
-                this.list.querySelectorAll('.project-selector-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const projectKey = item.dataset.project;
-                        this.selectProject(projectKey);
-                    });
-                });
-            }
-
-            showLanguages() {
-                this.currentStep = 'languages';
-                const project = this.data[this.selectedProject];
-                const filteredLanguages = project.languages.filter(lang =>
-                    lang.name.toLowerCase().includes(this.searchTerm)
-                );
-
-                let html = `
-                    <div class="project-selector-back">
-                        <span class="project-selector-back-arrow">←</span>
-                        Back to projects
-                    </div>
-                `;
-
-                if (filteredLanguages.length === 0) {
-                    html += '<div class="project-selector-no-results">No languages found</div>';
-                } else {
-                    html += filteredLanguages.map(lang => `
-                        <div class="project-selector-item" data-language="${lang.code}" data-url="${lang.url}">
-                            <div class="project-selector-item-main">
-                                <div class="project-selector-item-title">${lang.name}</div>
-                                <div class="project-selector-item-subtitle">${project.name} - ${lang.name}</div>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-
-                this.list.innerHTML = html;
-
-                const backButton = this.list.querySelector('.project-selector-back');
-                if (backButton) {
-                    backButton.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.selectedProject = null;
-                        this.searchTerm = '';
-                        this.input.value = '';
-                        this.input.placeholder = 'Search projects...';
-
-                        this.showProjects();
-                    });
-                }
-
-                this.list.querySelectorAll('.project-selector-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const languageCode = item.dataset.language;
-                        const url = item.dataset.url;
-                        this.selectLanguage(languageCode, url);
-                    });
-                });
-            }
-
-            selectProject(projectKey) {
-                this.selectedProject = projectKey;
-                this.searchTerm = '';
-                this.input.value = '';
-                this.input.placeholder = `Search ${this.data[projectKey].name} languages...`;
-
-                this.input.removeAttribute('readonly'); // Keep input editable for language search
-                this.showLanguages();
-            }
-
-            selectLanguage(languageCode, url) {
-                this.selectedLanguage = languageCode;
-                const project = this.data[this.selectedProject];
-                const language = project.languages.find(l => l.code === languageCode);
-
-                this.input.value = `${project.name} – ${language.name}`;
-                this.input.placeholder = 'Search projects...';
-                this.closeDropdown();
-
-                if (this.callback) {
-                    this.callback({
-                        project: this.selectedProject,
-                        projectName: project.name,
-                        language: languageCode,
-                        languageName: language.name,
-                        url: url
-                    });
-                }
-            }
-
-            reset() {
-                this.selectedProject = null;
-                this.selectedLanguage = null;
-                this.currentStep = 'projects';
-                this.searchTerm = '';
-                this.input.value = '';
-                this.input.placeholder = 'Search projects...';
-                this.input.removeAttribute('readonly');
-                this.closeDropdown();
-            }
-        }
-
-        // Initialize the selector
-        let selectedProjectData = null;
-        const projectSelector = new TwoStepProjectSelector('projectSelector', projectData, (selection) => {
-            selectedProjectData = selection;
-            console.log('Selected:', selection);
-        });
-
-        const toggleSidebarButton = document.getElementById("toggleSidebar");
-        const sidebar = document.getElementById("sidebar");
-        const collapseIcon = document.getElementById("collapseIcon");
-        const expandIcon = document.getElementById("expandIcon");
-        let isCollapsed = false;
-
-
-        const filterEdits = document.getElementById("filterEdits");
-        const filterUsers = document.getElementById("filterUsers");
-
-        toggleSidebarButton.addEventListener("click", () => {
-            isCollapsed = !isCollapsed;
-            if (isCollapsed) {
-                sidebar.classList.add("sidebar-collapsed");
-                collapseIcon.classList.add("hidden");
-                expandIcon.classList.remove("hidden");
-            } else {
-                sidebar.classList.remove("sidebar-collapsed");
-                collapseIcon.classList.remove("hidden");
-                expandIcon.classList.add("hidden");
-            }
-        });
-
-        // Date Range Slider functionality
+        // Elements
+        const projectSelectorInput = document.getElementById('projectSelectorInput');
+        const projectSelectorDropdown = document.getElementById('projectSelectorDropdown');
+        const projectSelectorList = document.getElementById('projectSelectorList');
+        const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+        const toggleSidebarButton = document.getElementById('toggleSidebar');
+        const sidebar = document.getElementById('sidebar');
+        const collapseIcon = document.getElementById('collapseIcon');
+        const expandIcon = document.getElementById('expandIcon');
+        const filterEdits = document.getElementById('filterEdits');
+        const filterUsers = document.getElementById('filterUsers');
         const dateModal = document.getElementById('dateModal');
-        const openDateModal = document.getElementById('openDateModal');
-        const closeDateModal = document.getElementById('closeDateModal');
-        const applyDateRange = document.getElementById('applyDateRange');
+        const closeDateModalBtn = document.getElementById('closeDateModal');
+        const applyDateRangeBtn = document.getElementById('applyDateRange');
+        const startMonthInput = document.getElementById('startMonth');
+        const endMonthInput = document.getElementById('endMonth');
 
-        const startHandle = document.getElementById('startHandle');
-        const endHandle = document.getElementById('endHandle');
-        const sliderTrack = document.getElementById('sliderTrack');
-        const dateSlider = document.getElementById('dateSlider');
-
-        // Generate dates from 2014 to current date
-        const startYear = 2014;
-        const endYear = new Date().getFullYear();
-        const totalMonths = ((endYear - startYear) * 12) + new Date().getMonth() + 1;
-
-        let startValue = 0;
-        let endValue = totalMonths - 1;
-
-        function updateSliderTrack() {
-            const sliderWidth = dateSlider.offsetWidth;
-            const startPos = (startValue / (totalMonths - 1)) * sliderWidth;
-            const endPos = (endValue / (totalMonths - 1)) * sliderWidth;
-
-            sliderTrack.style.left = `${startPos}px`;
-            sliderTrack.style.width = `${endPos - startPos}px`;
-            startHandle.style.left = `${startPos}px`;
-            endHandle.style.left = `${endPos}px`;
-        }
-
-        function getDateFromValue(value) {
-            const months = [
-                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-            ];
-            const month = value % 12;
-            const year = Math.floor(value / 12) + startYear;
-            return `${months[month]} ${year}`;
-        }
-
-
-        function updateDateDisplay() {
-            document.getElementById('openDateModal').textContent = `${getDateFromValue(startValue)} - ${getDateFromValue(endValue)}`;
-        }
-
-        // Quick pick functionality
-        document.querySelectorAll('.quick-pick').forEach(button => {
-            button.addEventListener('click', () => {
-                const months = button.dataset.months;
-                endValue = totalMonths - 1;
-
-                if (months === 'all') {
-                    startValue = 0;
-                } else {
-                    startValue = Math.max(0, endValue - parseInt(months) + 1);
-                }
-
-                updateSliderTrack();
-                updateDateDisplay();
+        // Build projectData structure grouped by sitename with language list
+        const projectData = {}; // { sitename: { name: readableName, languages: [{languageName, domain, url}] } }
+        const projectNameMap = { wiki: 'Wikipedia', wiktionary: 'Wiktionary', wikibooks: 'Wikibooks', wikinews: 'Wikinews', wikiquote: 'Wikiquote', wikisource: 'Wikisource', wikiversity: 'Wikiversity', wikivoyage: 'Wikivoyage' };
+        Object.entries(rawLanguages).forEach(([languageName, communities]) => {
+            communities.forEach(c => {
+                const key = c.sitename;
+                if (!projectData[key]) projectData[key] = { name: projectNameMap[key] || key, languages: [] };
+                try { const u = new URL(c.url); projectData[key].languages.push({ languageName, domain: u.hostname, url: c.url }); } catch { projectData[key].languages.push({ languageName, domain: c.url, url: c.url }); }
             });
         });
 
-        // Drag functionality
-        let isDragging = null;
+        let selectorState = { step: 'projects', selectedProject: null, selectedLanguage: null };
 
-        function handleDrag(e) {
-            if (!isDragging) return;
+        function renderProjects(filter = '') {
+            selectorState.step = 'projects';
+            const entries = Object.entries(projectData).filter(([k, v]) => v.name.toLowerCase().includes(filter));
+            projectSelectorList.innerHTML = entries.map(([key, proj]) => `<div class="project-selector-item" data-project="${key}"><div class="project-selector-item-main"><div class="project-selector-item-title">${proj.name}</div><div class="project-selector-item-subtitle">${proj.languages.length} languages</div></div><div class="project-selector-arrow">→</div></div>`).join('') || '<div class="project-selector-no-results">No projects</div>';
+        }
 
-            const rect = dateSlider.getBoundingClientRect();
-            const pos = (e.clientX - rect.left) / rect.width;
-            const value = Math.round(pos * (totalMonths - 1));
+        function renderLanguages(filter = '') {
+            selectorState.step = 'languages';
+            const proj = projectData[selectorState.selectedProject];
+            let html = '<div class="project-selector-back"><span class="project-selector-back-arrow">←</span>Back</div>';
+            const langs = proj.languages.filter(l => l.languageName.toLowerCase().includes(filter));
+            html += langs.map(l => `<div class="project-selector-item" data-lang="${encodeURIComponent(l.languageName)}" data-domain="${l.domain}" data-url="${l.url}"><div class="project-selector-item-main"><div class="project-selector-item-title">${l.languageName}</div><div class="project-selector-item-subtitle">${proj.name}</div></div></div>`).join('') || '<div class="project-selector-no-results">No languages</div>';
+            projectSelectorList.innerHTML = html;
+        }
 
-            if (isDragging === startHandle && value < endValue) {
-                startValue = Math.max(0, value);
-            } else if (isDragging === endHandle && value > startValue) {
-                endValue = Math.min(totalMonths - 1, value);
+        function openDropdown() { projectSelectorDropdown.classList.remove('hidden'); }
+        function closeDropdown() { projectSelectorDropdown.classList.add('hidden'); }
+
+        projectSelectorInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (projectSelectorDropdown.classList.contains('hidden')) {
+                openDropdown();
+                if (selectorState.step === 'projects') renderProjects(projectSelectorInput.value.toLowerCase());
+                else renderLanguages(projectSelectorInput.value.toLowerCase());
             }
-
-            updateSliderTrack();
-            updateDateDisplay();
-        }
-
-        // Event Listeners
-        openDateModal.addEventListener('click', () => {
-            dateModal.classList.remove('hidden');
-            updateSliderTrack();
-            updateDateDisplay();
         });
-
-        closeDateModal.addEventListener('click', () => {
-            dateModal.classList.add('hidden');
+        projectSelectorInput.addEventListener('focus', () => {
+            if (projectSelectorDropdown.classList.contains('hidden')) {
+                openDropdown();
+                if (selectorState.step === 'projects') renderProjects(projectSelectorInput.value.toLowerCase());
+                else renderLanguages(projectSelectorInput.value.toLowerCase());
+            }
         });
-
-        applyDateRange.addEventListener('click', () => {
-            dateModal.classList.add('hidden');
+        projectSelectorInput.addEventListener('input', e => {
+            const val = e.target.value.toLowerCase();
+            if (projectSelectorDropdown.classList.contains('hidden')) {
+                openDropdown();
+            }
+            if (selectorState.step === 'projects') renderProjects(val);
+            else renderLanguages(val);
         });
-
-        [startHandle, endHandle].forEach(handle => {
-            handle.addEventListener('mousedown', (e) => {
-                isDragging = handle;
-                e.preventDefault();
-            });
+        document.addEventListener('click', e => {
+            if (!document.getElementById('projectSelector').contains(e.target)) closeDropdown();
         });
-
-        document.addEventListener('mousemove', handleDrag);
-        document.addEventListener('mouseup', () => {
-            isDragging = null;
-        });
-
-        // Initial setup
-        updateSliderTrack();
-        updateDateDisplay();
-
-        // Search functionality
-        function search() {
-            if (!selectedProjectData) {
-                alert('Please select a project and language first.');
+        projectSelectorList.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            const item = e.target.closest('.project-selector-item');
+            if (!item) {
+                if (e.target.closest('.project-selector-back')) {
+                    selectorState.selectedProject = null;
+                    projectSelectorInput.value = '';
+                    projectSelectorInput.placeholder = 'Search projects...';
+                    renderProjects();
+                }
                 return;
             }
+            if (selectorState.step === 'projects') {
+                selectorState.selectedProject = item.dataset.project;
+                projectSelectorInput.value = '';
+                projectSelectorInput.placeholder = 'Search languages...';
+                // Keep dropdown open and render languages
+                renderLanguages();
+                // Keep focus on input
+                projectSelectorInput.focus();
+            }
+            else if (selectorState.step === 'languages') {
+                selectorState.selectedLanguage = decodeURIComponent(item.dataset.lang);
+                selectorState.domain = item.dataset.domain;
+                projectSelectorInput.value = `${projectData[selectorState.selectedProject].name} – ${selectorState.selectedLanguage}`;
+                // Only close dropdown when final selection is made
+                closeDropdown();
+            }
+        });
 
-            const startDate = getDateFromValue(startValue);
-            const endDate = getDateFromValue(endValue);
-            const editsFilter = filterEdits.checked;
-            const usersFilter = filterUsers.checked;
+        // Sidebar toggle
+        toggleSidebarButton.addEventListener('click', () => {
+            const collapsed = sidebar.classList.toggle('sidebar-collapsed');
+            collapseIcon.classList.toggle('hidden', collapsed);
+            expandIcon.classList.toggle('hidden', !collapsed);
+        });
 
-            // Load the new URL
-            window.location.href = `?language=${selectedProjectData.languageName}&project_group=${selectedProjectData.url}&datestart=${startDate}&dateend=${endDate}&filter_edits=${editsFilter}&filter_users=${usersFilter}`;
+        // Date handling
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        function formatDisplayRange() {
+            if (!startMonthInput.value || !endMonthInput.value) { dateRangeDisplay.textContent = '—'; return; }
+            const [sY, sM] = startMonthInput.value.split('-').map(Number);
+            const [eY, eM] = endMonthInput.value.split('-').map(Number);
+            dateRangeDisplay.textContent = `${monthNames[sM - 1]} ${sY} → ${monthNames[eM - 1]} ${eY}`;
         }
 
-        document.getElementById('submitButton').addEventListener('click', search);
+        dateRangeDisplay.addEventListener('click', () => { dateModal.classList.remove('hidden'); });
+        closeDateModalBtn.addEventListener('click', () => { dateModal.classList.add('hidden'); });
+        applyDateRangeBtn.addEventListener('click', () => { formatDisplayRange(); dateModal.classList.add('hidden'); });
 
-        // Load filters from URL
-        document.addEventListener("DOMContentLoaded", () => {
-            const urlParams = new URLSearchParams(window.location.search);
+        document.querySelectorAll('.quick-pick').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const now = new Date();
+                let start;
+                const range = btn.dataset.range;
+                if (range === 'all') { start = new Date(2014, 0, 1); }
+                else if (range === 'ytd') { start = new Date(now.getFullYear(), 0, 1); }
+                else if (/m$/.test(range)) { const months = parseInt(range.slice(0, -1), 10); start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1); }
+                else { start = new Date(now.getFullYear(), now.getMonth(), 1); }
+                const end = new Date(now.getFullYear(), now.getMonth(), 1);
+                startMonthInput.value = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+                endMonthInput.value = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
+                formatDisplayRange();
+            });
+        });
 
-            // Set project selector value
-            const language = urlParams.get("language");
-            const projectGroup = urlParams.get("project_group");
+        // Submit/search
+        document.getElementById('submitButton').addEventListener('click', () => {
+            if (!selectorState.selectedProject || !selectorState.selectedLanguage || !selectorState.domain) { alert('Select a project and language first.'); return; }
+            if (!startMonthInput.value || !endMonthInput.value) { alert('Select date range'); return; }
+            const [startY, startM] = startMonthInput.value.split('-').map(Number);
+            const [endY, endM] = endMonthInput.value.split('-').map(Number);
+            const datestart = `${monthNames[startM - 1]} ${startY}`;
+            const dateend = `${monthNames[endM - 1]} ${endY}`;
+            const language = selectorState.selectedLanguage; // using language name
+            const project_group = encodeURIComponent(`${language}:/${selectorState.domain}`);
+            const params = new URLSearchParams({ language, project_group, datestart, dateend, filter_edits: filterEdits.checked, filter_users: filterUsers.checked });
+            window.location.search = params.toString();
+        });
 
-            if (language && projectGroup) {
-                // Find the matching project and language
-                for (const [projectKey, project] of Object.entries(projectData)) {
-                    const matchingLang = project.languages.find(lang =>
-                        lang.name === language && lang.url === projectGroup
-                    );
-                    if (matchingLang) {
-                        selectedProjectData = {
-                            project: projectKey,
-                            projectName: project.name,
-                            language: matchingLang.code,
-                            languageName: matchingLang.name,
-                            url: matchingLang.url
-                        };
-
-                        // Update the input display
-                        document.getElementById('projectSelectorInput').value =
-                            `${project.name} – ${matchingLang.name}`;
-                        break;
+        (function init() {
+            renderProjects();
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+            startMonthInput.value = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+            endMonthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            formatDisplayRange();
+            const qs = new URLSearchParams(window.location.search);
+            if (qs.get('language') && qs.get('project_group')) {
+                const language = qs.get('language');
+                const pg = decodeURIComponent(qs.get('project_group'));
+                const domain = pg.split(':/')[1];
+                // Find the project containing this domain
+                Object.entries(projectData).forEach(([projKey, proj]) => {
+                    const langEntry = proj.languages.find(l => l.languageName === language && l.domain === domain);
+                    if (langEntry) {
+                        selectorState.selectedProject = projKey;
+                        selectorState.selectedLanguage = language;
+                        selectorState.domain = domain;
+                        projectSelectorInput.value = `${proj.name} – ${language}`;
                     }
-                }
+                });
             }
-
-            // Set date range
-            const datestart = urlParams.get("datestart");
-            const dateend = urlParams.get("dateend");
-            const dateModal = document.getElementById("openDateModal");
-            if (datestart && dateend) {
-                dateModal.textContent = `${datestart} - ${dateend}`;
-            }
-
-            // Set filter checkboxes
-            const filterEditsValue = urlParams.get("filter_edits");
-            if (filterEditsValue === "true") {
-                filterEdits.checked = true;
-            }
-
-            const filterUsersValue = urlParams.get("filter_users");
-            if (filterUsersValue === "true") {
-                filterUsers.checked = true;
-            }
-        });
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const chartContainer = document.getElementById('chartContainer');
-            if (chartContainer) {
-                const plotDiv = chartContainer.querySelector('.plotly-graph-div');
-                if (plotDiv) {
-                    let hoverInput = null;
-                    let isInputActive = false;
-                    let currentProject = null;
-                    let currentTimestamp = null;
-
-                    plotDiv.on('plotly_hover', function (data) {
-                        const point = data.points[0];
-                        if (point.curveNumber === 1) { // Peaks are the second trace
-                            const customData = point.customdata;
-                            currentProject = customData.project;
-                            currentTimestamp = customData.timestamp;
-
-                            if (!hoverInput) {
-                                hoverInput = document.createElement('div');
-                                hoverInput.style.position = 'absolute';
-                                hoverInput.style.backgroundColor = 'white';
-                                hoverInput.style.border = '1px solid #ccc';
-                                hoverInput.style.padding = '3px';
-                                hoverInput.style.zIndex = '1000';
-                                hoverInput.style.display = 'flex';
-                                hoverInput.style.alignItems = 'center';
-                                hoverInput.style.borderRadius = '4px';
-                                hoverInput.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-
-                                const input = document.createElement('input');
-                                input.type = 'text';
-                                input.placeholder = 'Enter label...';
-                                input.style.marginRight = '5px';
-                                input.style.border = '1px solid #ddd';
-                                input.style.padding = '2px 4px';
-
-                                const saveButton = document.createElement('button');
-                                saveButton.textContent = 'Save';
-                                saveButton.style.marginRight = '5px';
-                                saveButton.style.padding = '2px 8px';
-                                saveButton.style.backgroundColor = '#4CAF50';
-                                saveButton.style.color = 'white';
-                                saveButton.style.border = 'none';
-                                saveButton.style.borderRadius = '2px';
-                                saveButton.style.cursor = 'pointer';
-
-                                const saveLabel = () => {
-                                    const label = input.value;
-                                    fetch('/api/update_peak_label', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ project: currentProject, timestamp: currentTimestamp, label }),
-                                    })
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            if (data.success) {
-                                                alert('Label updated successfully!');
-                                                hoverInput.style.display = 'none';
-                                                isInputActive = false;
-                                                // Optionally reload to show updated chart
-                                                window.location.reload();
-                                            } else {
-                                                alert('Error updating label: ' + data.error);
-                                            }
-                                        });
-                                };
-
-                                input.addEventListener('keypress', (e) => {
-                                    if (e.key === 'Enter') {
-                                        saveLabel();
-                                    }
-                                });
-
-                                saveButton.addEventListener('click', saveLabel);
-
-                                const closeButton = document.createElement('button');
-                                closeButton.textContent = '×';
-                                closeButton.style.marginLeft = '5px';
-                                closeButton.style.padding = '2px 6px';
-                                closeButton.style.backgroundColor = '#f44336';
-                                closeButton.style.color = 'white';
-                                closeButton.style.border = 'none';
-                                closeButton.style.borderRadius = '2px';
-                                closeButton.style.cursor = 'pointer';
-
-                                closeButton.addEventListener('click', () => {
-                                    hoverInput.style.display = 'none';
-                                    isInputActive = false;
-                                });
-
-                                hoverInput.appendChild(input);
-                                hoverInput.appendChild(saveButton);
-                                hoverInput.appendChild(closeButton);
-                                document.body.appendChild(hoverInput);
-
-                                // Prevent input box from disappearing when interacting with it
-                                hoverInput.addEventListener('mouseenter', () => {
-                                    isInputActive = true;
-                                });
-                                hoverInput.addEventListener('mouseleave', () => {
-                                    isInputActive = false;
-                                });
-                            }
-
-                            // Get chart container position for relative positioning
-                            const chartRect = plotDiv.getBoundingClientRect();
-                            const relativeX = data.event.clientX - chartRect.left;
-                            const relativeY = data.event.clientY - chartRect.top;
-
-                            // Fetch existing label
-                            fetch(`/api/get_peak_label?project=${currentProject}&timestamp=${currentTimestamp}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    const input = hoverInput.querySelector('input');
-                                    input.value = data.label || '';
-                                    // Position relative to chart container with scroll offset
-                                    const updatedChartRect = plotDiv.getBoundingClientRect();
-                                    hoverInput.style.left = `${updatedChartRect.left + relativeX + window.pageXOffset}px`;
-                                    hoverInput.style.top = `${updatedChartRect.top + relativeY + window.pageYOffset}px`;
-                                    hoverInput.style.display = 'flex';
-                                    // Focus the input and move cursor to end
-                                    setTimeout(() => {
-                                        input.focus();
-                                        input.setSelectionRange(input.value.length, input.value.length);
-                                    }, 100);
-                                });
-
-                            // Initial positioning relative to chart with scroll offset
-                            hoverInput.style.left = `${chartRect.left + relativeX + window.pageXOffset}px`;
-                            hoverInput.style.top = `${chartRect.top + relativeY + window.pageYOffset}px`;
-                            hoverInput.style.display = 'flex';
-                            isInputActive = true;
-                        }
-                    });
-
-                    plotDiv.on('plotly_unhover', () => {
-                        setTimeout(() => {
-                            if (!isInputActive && hoverInput) {
-                                hoverInput.style.display = 'none';
-                            }
-                        }, 200);
-                    });
-
-                    document.addEventListener('click', (event) => {
-                        if (hoverInput && !hoverInput.contains(event.target)) {
-                            hoverInput.style.display = 'none';
-                            isInputActive = false;
-                        }
-                    });
-
-                    plotDiv.on('plotly_click', function (data) {
-
-                        const point = data.points[0];
-                        if (point.curveNumber === 1) { // Peaks are the second trace
-                            const customData = point.customdata;
-                            const project = customData.project;
-                            const timestamp = customData.timestamp;
-
-                            fetch(`/api/get_peak_label?project=${project}&timestamp=${timestamp}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    // if (data.label) {
-                                    //     alert(`Existing Label: ${data.label}`);
-                                    // } else {
-                                    //     alert('No label found for this peak.');
-                                    // }
-                                });
-                        }
-                    });
-                }
-            }
-        });
-
+            if (qs.get('datestart') && qs.get('dateend')) { const ds = qs.get('datestart').split(' '); const de = qs.get('dateend').split(' '); const sm = monthNames.indexOf(ds[0]) + 1; const em = monthNames.indexOf(de[0]) + 1; if (sm > 0 && em > 0) { startMonthInput.value = `${ds[1]}-${String(sm).padStart(2, '0')}`; endMonthInput.value = `${de[1]}-${String(em).padStart(2, '0')}`; formatDisplayRange(); } }
+            filterEdits.checked = qs.get('filter_edits') === 'true';
+            filterUsers.checked = qs.get('filter_users') === 'true';
+        })();
     </script>
 </body>
 
