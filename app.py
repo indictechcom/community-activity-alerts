@@ -2,8 +2,6 @@ from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import requests
 import pandas as pd
-import pymysql
-import configparser
 import plotly.graph_objects as go
 from plotly.io import to_html
 import calendar
@@ -11,6 +9,8 @@ from flask_mwoauth import MWOAuth
 import os
 import urllib.parse
 from dotenv import load_dotenv
+from utils import getHeader
+from config import get_db_connection
 
 app = Flask(__name__)
 
@@ -18,43 +18,19 @@ load_dotenv()
 
 app.secret_key = os.getenv("SECRET_KEY")
 mwo_auth = MWOAuth(
-    base_url="https://meta.wikimedia.org/w",
-    consumer_key="bb94640209ef01e47cb568d4b37be708",
-    consumer_secret="8f55fd75db7cdf86ac369d059219ea19b12a3c45",
+    base_url=os.getenv("MWO_BASE_URL"),
+    consumer_key=os.getenv("CONSUMER_KEY"),
+    consumer_secret=os.getenv("CONSUMER_SECRET"),
 )
 app.register_blueprint(mwo_auth.bp)
-# Use configured BASE_URL if present; otherwise fall back to the MWOAuth blueprint base URL
 base_url = os.getenv("BASE_URL") or getattr(mwo_auth, "base_url", None)
-
-
-# --- DB connection setup ---
-def get_db_connection():
-    cfg = configparser.ConfigParser()
-    cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
-    user = cfg["client"]["user"]
-    password = cfg["client"]["password"]
-
-    conn = pymysql.connect(
-        host="tools.db.svc.wikimedia.cloud",
-        user=user,
-        password=password,
-        database="s56391__community_alerts",
-        charset="utf8mb4",
-    )
-    return conn
 
 
 # --- Get communities list from SiteMatrix API ---
 def get_all_communities():
     url = "https://commons.wikimedia.org/w/api.php?action=sitematrix&smtype=language&format=json"
-    headers = {
-        "User-Agent": "Community Activity Alerts (https://github.com/indictechcom/community-activity-alerts)",
-        "tool": "Community Activity Alerts",
-        "url": "https://github.com/indictechcom/community-activity-alerts",
-        "email": "tools.community-activity-alerts-system@toolforge.org",
-    }
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=getHeader())
     data = response.json()
     sitematrix = data["sitematrix"]
 

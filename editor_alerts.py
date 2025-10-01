@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 import pandas as pd
-import pymysql
-import configparser
 import logging
+from config import get_db_connection
 
 # --- Setup logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- DB config ---
-DB_NAME = 'community_alerts'
 SOURCE_TABLE = 'editor_counts'
 ALERTS_TABLE = 'editor_alerts'
 
@@ -44,14 +42,7 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
 # --- Main logic ---
 def main():
     # Connect to DB
-    conn = pymysql.connect(
-        host='localhost',
-        user='wikim',
-        password='wikimedia',
-        database=DB_NAME,
-        charset='utf8mb4',
-        autocommit=True
-    )
+    conn = get_db_connection()
 
     # Ensure alerts table exists
     with conn.cursor() as cursor:
