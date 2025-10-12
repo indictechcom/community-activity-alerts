@@ -14,9 +14,7 @@ def create_auth_blueprint(mwoauth):
 
     @auth_bp.route('/user')
     def get_user():
-        print("Fetching user info")
         username = mwoauth.get_current_user(True)  # use the shared instance
-        print(f"Current user: {username}")
         if username:
             return jsonify({"isAuthenticated": True, "username": username})
         else:

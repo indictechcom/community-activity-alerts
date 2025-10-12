@@ -77,9 +77,7 @@ for project in sorted(projects):
     logging.info(f"Fetching edits for {project} from {start} to {end}")
 
     url = f"{API_CONFIG['base_url']}/{project}/{API_CONFIG['editor_type']}/{API_CONFIG['page_type']}/{API_CONFIG['granularity']}/{start}/{end}"
-    print(f"URL: {url}") 
     response = requests.get(url, headers=getHeader())
-    print(f"Response Status Code: {response.status_code}")
     if response.status_code != 200:
             # This handles 404s for inactive wikis, which is normal
             logging.warning(f"API Info for {project}: {response.status_code} - Skipping.")

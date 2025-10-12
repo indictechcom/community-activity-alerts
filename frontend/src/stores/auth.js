@@ -21,7 +21,6 @@ export const useAuthStore = defineStore("auth",
                 this.loading = true;
                 try {
                     const res = await api.get("/auth/user");
-                    console.log("sasa" + res.data.username);
 
                     if (res.data.isAuthenticated) {
                         this.user = res.data.username;
