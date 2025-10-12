@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, session
+from flask import Flask, render_template, request, jsonify, redirect, session, send_from_directory	
 from datetime import datetime
 from flask_cors import CORS
 import requests
@@ -12,11 +12,15 @@ import os
 from dotenv import load_dotenv
 from utils import getHeader
 from config import get_db_connection
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-app = Flask(__name__)
-CORS(app, 
+app = Flask(__name__, static_folder="../static")
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
+CORS(app,
      supports_credentials=True,
-     origins=["http://localhost:5173"],  # Specify your frontend origin
+     origins=[os.getenv("FRONTEND_URL")],  # Specify your frontend origin
      allow_headers=["Content-Type"],
      expose_headers=["Content-Type"])
 
@@ -25,17 +29,17 @@ load_dotenv()
 app.secret_key = os.getenv("SECRET_KEY")
 
 # Add these session configuration settings
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # or 'None' if cross-site
-app.config['SESSION_COOKIE_SECURE'] = True  # Set to True if using HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask handle this
+app.config['SESSION_COOKIE_DOMAIN'] = None
 
 
 mwo_auth = MWOAuth(
     base_url=os.getenv("MWO_BASE_URL"),
     consumer_key=os.getenv("CONSUMER_KEY"),
     consumer_secret=os.getenv("CONSUMER_SECRET"),
-    user_agent="CommunityActivityAlerts/1.0 (http://localhost:5000)"
+    user_agent="Community Activity Alerts (https://community-activity-alerts-dev.toolforge.org)"
 )
 
 app.register_blueprint(mwo_auth.bp)
@@ -46,16 +50,15 @@ auth_bp = create_auth_blueprint(mwo_auth)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
 
-@app.route("/")
-def index():
-    return redirect("http://localhost:5173/")
-
-@app.after_request
-def after_request(response):
-    print(f"Session contents: {session}")
-    return response
-
-
+@app.route("/", defaults={"path": ""}, endpoint="index")
+@app.route("/<path:path>")
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    if os.getenv('ENV') == 'dev':
+        return redirect(os.getenv("FRONTEND_URL", "http://localhost:5173"))
+    else:
+        return send_from_directory(app.static_folder, "index.html")
 
 
 # --- Get communities list from SiteMatrix API ---
