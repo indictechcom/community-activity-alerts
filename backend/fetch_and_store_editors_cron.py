@@ -48,7 +48,7 @@ DB_NAME = 'community_alerts'
 DB_TABLE = 'editor_counts'
 
 conn = pymysql.connect(
-    host='localhost',
+    host='localhost', # db for docker setup
     user='wikim',
     password='wikimedia',
     database=DB_NAME,
