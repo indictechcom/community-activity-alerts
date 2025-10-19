@@ -1,0 +1,72 @@
+version: '3.9'
+
+services:
+  db:
+    image: mariadb:latest
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: community_alerts
+      MYSQL_USER: wikim
+      MYSQL_PASSWORD: wikimedia
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: "mariadb-admin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - comm-alerts
+
+  cron:
+      build:
+        context: .
+        dockerfile: cron/Dockerfile
+      container_name: cron
+      depends_on:
+        db:
+          condition: service_healthy
+      restart: always
+      networks:
+        - comm-alerts
+      environment:
+        ENV : dev
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+     - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+      cron:
+        condition: service_started
+    restart: always
+    networks:
+      - comm-alerts
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend:/src
+      - /src/node_modules
+    container_name: frontend
+    ports:
+     - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: always
+    networks:
+      - comm-alerts 
+
+volumes:
+  mariadb_data:
+
+networks:
+  comm-alerts:
