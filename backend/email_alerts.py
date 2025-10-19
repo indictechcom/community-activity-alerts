@@ -8,13 +8,10 @@ import logging
 import configparser
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from config import get_db_connection
 
 # --- Setup logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# --- Load config from configparser file ---
-cfg = configparser.ConfigParser()
-cfg.read('/data/project/community-activity-alerts-system/replica.my.cnf')
 
 # Gmail settings
 GMAIL_USER = "farzana.shjhn@gmail.com"
@@ -24,22 +21,10 @@ ALERT_FROM = "alerts@wiki.org"
 # Mailing list
 MAILING_LIST = ["fuzzphorescence@gmail.com", "farzana.shjhn@gmail.com"]
 
-# Toolforge DB credentials
-user = cfg['client']['user']
-password = cfg['client']['password']
-DB_NAME = 's56391__community_alerts'
-DB_HOST = 'tools.db.svc.wikimedia.cloud'
 ALERTS_TABLE = 'community_alerts'
 
 # --- Connect to MySQL DB ---
-conn = pymysql.connect(
-    host=DB_HOST,
-    user=user,
-    password=password,
-    database=DB_NAME,
-    charset='utf8mb4',
-    autocommit=True
-)
+conn = get_db_connection()
 
 # --- Utility Functions ---
 def dataframe_to_html_table(df):

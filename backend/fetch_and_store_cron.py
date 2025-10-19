@@ -3,26 +3,21 @@
 import requests
 import pandas as pd
 import pymysql
-import configparser
 from datetime import datetime, timedelta
 import logging
 import time
 from random import uniform
+from utils import getHeader
+from config import get_db_connection, get_db_credentials, API_CONFIG
 
 # --- Configure logging ---
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# --- Load Toolforge DB credentials ---
-cfg = configparser.ConfigParser()
-cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
-user = cfg["client"]["user"]
-password = cfg["client"]["password"]
-
 # --- Fetch project list from SiteMatrix ---
 sitematrix_url = "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json"
-response = requests.get(sitematrix_url)
+response = requests.get(sitematrix_url,  headers=getHeader())
 data = response.json()
 
 projects = set()
@@ -47,26 +42,16 @@ last_month_end = today - timedelta(days=1)
 last_month_start = last_month_end.replace(day=1)
 
 start = last_month_start.strftime("%Y%m%d")
-end = last_month_end.strftime("%Y%m%d")
+end = today.strftime("%Y%m%d")  
 
-# --- Connect to Toolforge DB ---
-DB_NAME = "s56391__community_alerts"
-DB_TABLE = "edit_counts"
-
-conn = pymysql.connect(
-    host="tools.db.svc.wikimedia.cloud",
-    user=user,
-    password=password,
-    database=DB_NAME,
-    charset="utf8mb4",
-    autocommit=True,
-)
+credentials = get_db_credentials()
+conn = get_db_connection()
 
 cursor = conn.cursor()
 
 # --- Ensure main table exists ---
 create_table_sql = f"""
-CREATE TABLE IF NOT EXISTS {DB_TABLE} (
+CREATE TABLE IF NOT EXISTS {credentials["DB_TABLE"]} (
     timestamp DATETIME,
     edit_count INT,
     project VARCHAR(255),
@@ -85,24 +70,19 @@ cursor.execute(create_table_sql)
 # )
 # ''')
 
-# --- API config ---
-base_url = "https://wikimedia.org/api/rest_v1/metrics/edits/aggregate"
-editor_type = "all-editor-types"
-page_type = "content"
-granularity = "monthly"
+
 
 # --- Loop through projects ---
 for project in sorted(projects):
     logging.info(f"Fetching edits for {project} from {start} to {end}")
 
-    url = f"{base_url}/{project}/{editor_type}/{page_type}/{granularity}/{start}/{end}"
-    response = requests.get(url)
+    url = f"{API_CONFIG['base_url']}/{project}/{API_CONFIG['editor_type']}/{API_CONFIG['page_type']}/{API_CONFIG['granularity']}/{start}/{end}"
+    response = requests.get(url, headers=getHeader())
     if response.status_code != 200:
-        logging.warning(
-            f"API Error for {project}: {response.status_code} - {response.text}"
-        )
-        time.sleep(uniform(1, 3))  # Sleep before next request
-        continue
+            # This handles 404s for inactive wikis, which is normal
+            logging.warning(f"API Info for {project}: {response.status_code} - Skipping.")
+            time.sleep(uniform(0.5, 1.5))
+            continue
 
     try:
         data = response.json()
@@ -122,7 +102,7 @@ for project in sorted(projects):
     for _, row in df.iterrows():
         try:
             insert_sql = f"""
-            INSERT INTO {DB_TABLE} (timestamp, edit_count, project)
+            INSERT INTO {credentials["DB_TABLE"]} (timestamp, edit_count, project)
             VALUES (%s, %s, %s)
             ON DUPLICATE KEY UPDATE edit_count = VALUES(edit_count)
             """
