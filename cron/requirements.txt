@@ -1,0 +1,4 @@
+requests
+pandas
+pymysql
+python-dotenv
