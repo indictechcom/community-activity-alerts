@@ -7,8 +7,8 @@ from datetime import datetime, timedelta
 import logging
 import time
 from random import uniform
-from utils import getHeader
-from config import get_db_connection, get_db_credentials, API_CONFIG
+from backend.utils import getHeader
+from backend.config import get_db_connection, get_db_credentials, API_CONFIG
 
 # --- Configure logging ---
 logging.basicConfig(

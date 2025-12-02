@@ -1,0 +1,2 @@
+# Run at midnight on the 1st of each month
+0 0 1 * * root python /usr/src/cron/fetch_and_store_cron.py >> /var/log/cron.log 2>&1
