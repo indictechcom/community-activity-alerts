@@ -1,172 +1,204 @@
 <template>
-  <nav class="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 py-4 ">
-    <div class="glass-morphism rounded-2xl px-4 sm:px-6 py-3  ">
-      <div class="flex items-center justify-between max-w-screen-2xl mx-auto ">
-        <div class="flex items-center gap-2 sm:gap-3">
-          <div class="glass-icon p-2 rounded-full ">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-            </svg>
+  <header class="codex-navbar fixed top-0 left-0 right-0 z-50 border-b">
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Title Area -->
+        <div class="flex items-center gap-3">
+          <div class="logo-container text-blue-600">
+             <cdx-icon :icon="cdxIconLogo" size="medium" />
           </div>
-          <h1 class="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+          <h1 class="text-lg font-bold text-gray-900 tracking-tight">
             Community Activity Alerts
           </h1>
         </div>
 
         <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center gap-4 lg:gap-6">
-          <router-link
-            v-for="link in navLinks"
-            :key="link.path"
-            :to="link.path"
-            class="nav-link group relative px-4 py-2 text-sm lg:text-base font-medium text-gray-700 hover:text-blue-600 transition-all duration-300"
-            active-class="text-blue-600"
-          >
-            <span class="relative z-10 flex items-center gap-2 text-lg hover:text-blue-600 hover:font-semibold">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path v-if="link.name === 'Edit Counts'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-              </svg>
-              {{ link.name }}
-            </span>
-            <div class="absolute inset-0 glass-hover rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          </router-link>
+        <div class="hidden md:flex items-center gap-2">
+          <template v-for="link in navLinks" :key="link.path">
+            <router-link :to="link.path" custom v-slot="{ navigate, href, isActive }">
+              <cdx-button
+                :href="href"
+                @click="navigate"
+                :action="isActive ? 'progressive' : 'default'"
+                weight="quiet"
+                class="nav-item"
+              >
+                <template #icon>
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : cdxIconUserGroup" />
+                </template>
+                {{ link.name }}
+              </cdx-button>
+            </router-link>
+          </template>
+
+          <div class="w-px h-6 bg-gray-200 mx-2"></div>
 
           <!-- Auth Section -->
-          <div v-if="auth.loading" class="glass-card px-4 py-2 rounded-xl">
-            <div class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-              <span class="text-md text-gray-600">Loading...</span>
-            </div>
+          <div v-if="auth.loading" class="flex items-center gap-2 px-3">
+            <span class="animate-pulse w-4 h-4 bg-gray-200 rounded-full"></span>
+            <span class="text-sm text-gray-500">Loading...</span>
           </div>
 
-          <div v-else>
+          <div v-else class="flex items-center gap-2">
             <!-- Logged In -->
-            <div v-if="auth.isAuthenticated" class="flex items-center gap-3">
-              
-
-              <div class="glass-icon p-1 rounded-full">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
-                  {{ userInitials }}
-                </div>
+            <template v-if="auth.isAuthenticated">
+              <div class="flex items-center gap-2 px-2 py-1 bg-gray-100 rounded-md border border-gray-200">
+                <cdx-icon :icon="cdxIconUserAvatar" class="text-gray-500" />
+                <span class="text-sm font-medium text-gray-700">{{ userInitials }}</span>
               </div>
 
-              <button @click="auth.logout" class="glass-button px-4 py-2 rounded-xl font-medium text-lg text-gray-700 hover:text-red-600 transition-colors duration-300 flex items-center gap-2 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
+              <cdx-button 
+                @click="auth.logout" 
+                weight="quiet" 
+                action="destructive"
+              >
+                <template #icon>
+                  <cdx-icon :icon="cdxIconLogOut" />
+                </template>
                 Logout
-              </button>
-            </div>
+              </cdx-button>
+            </template>
 
             <!-- Not Logged In -->
-            <div v-else>
-              <button @click="auth.login" class="glass-button-primary px-6 py-2.5 rounded-xl font-semibold text-sm text-white flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-300">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                </svg>
+            <template v-else>
+              <cdx-button 
+                @click="auth.login" 
+                action="progressive" 
+                weight="primary"
+              >
+                <template #icon>
+                  <cdx-icon :icon="cdxIconLogIn" />
+                </template>
                 Login
-              </button>
-            </div>
+              </cdx-button>
+            </template>
           </div>
         </div>
 
         <!-- Mobile Menu Button -->
-        <button @click="toggleMobileMenu" class="md:hidden glass-icon p-2 rounded-full text-gray-700">
-          <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-          </svg>
-          <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        <div class="md:hidden">
+          <cdx-button
+            weight="quiet"
+            @click="toggleMobileMenu"
+            :aria-label="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+          >
+            <template #icon>
+              <cdx-icon :icon="mobileMenuOpen ? cdxIconClose : cdxIconMenu" />
+            </template>
+          </cdx-button>
+        </div>
       </div>
+    </div>
 
-      <!-- Mobile Menu -->
-      <transition
-        enter-active-class="transition ease-out duration-200"
-        enter-from-class="opacity-0 transform -translate-y-2"
-        enter-to-class="opacity-100 transform translate-y-0"
-        leave-active-class="transition ease-in duration-150"
-        leave-from-class="opacity-100 transform translate-y-0"
-        leave-to-class="opacity-0 transform -translate-y-2"
-      >
-        <div v-if="mobileMenuOpen" class="md:hidden mt-4 pt-4 border-t border-white/30">
-          <div class="flex flex-col gap-2">
-            <router-link
-              v-for="link in navLinks"
-              :key="link.path"
-              :to="link.path"
-              @click="mobileMenuOpen = false"
-              class="glass-card px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-300 flex items-center gap-3"
-              active-class="text-blue-600 bg-blue-50/30"
-            >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path v-if="link.name === 'Edit Counts'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-              </svg>
-              {{ link.name }}
-            </router-link>
+    <!-- Mobile Menu Dropdown -->
+    <transition
+      enter-active-class="transition duration-100 ease-out"
+      enter-from-class="transform scale-95 opacity-0"
+      enter-to-class="transform scale-100 opacity-100"
+      leave-active-class="transition duration-75 ease-in"
+      leave-from-class="transform scale-100 opacity-100"
+      leave-to-class="transform scale-95 opacity-0"
+    >
+      <div v-if="mobileMenuOpen" class="md:hidden border-t bg-white shadow-lg">
+        <div class="px-4 pt-2 pb-4 space-y-1">
+          <router-link
+            v-for="link in navLinks"
+            :key="link.path"
+            :to="link.path"
+            @click="mobileMenuOpen = false"
+            class="block"
+            custom
+            v-slot="{ navigate, href, isActive }"
+          >
+             <cdx-button
+                :href="href"
+                @click="navigate"
+                :action="isActive ? 'progressive' : 'default'"
+                weight="quiet"
+                class="w-full justify-start mb-1"
+              >
+                <template #icon>
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : cdxIconUserGroup" />
+                </template>
+                {{ link.name }}
+              </cdx-button>
+          </router-link>
 
-            <!-- Mobile Auth Section -->
-            <div v-if="auth.loading" class="glass-card px-4 py-3 rounded-xl">
-              <div class="flex items-center gap-2">
-                <div class="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
-                <span class="text-sm text-gray-600">Loading...</span>
-              </div>
+          <div class="border-t border-gray-100 my-2 pt-2">
+            <!-- Mobile Auth -->
+            <div v-if="auth.loading" class="px-4 py-2 text-sm text-gray-500">
+              Loading...
             </div>
-
             <div v-else>
-              <div v-if="auth.isAuthenticated" class="flex flex-col gap-2">
-                <div class="glass-card px-4 py-3 rounded-xl flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold shadow-lg">
-                    {{ userInitials }}
-                  </div>
-                  <p class="text-sm text-gray-700 font-medium">{{ auth.user }}</p>
+              <div v-if="auth.isAuthenticated" class="space-y-2">
+                <div class="flex items-center gap-2 px-4 py-2">
+                  <cdx-icon :icon="cdxIconUserAvatar" />
+                  <span class="font-medium">{{ auth.user }}</span>
                 </div>
-
-                <button @click="auth.logout" class="glass-button px-4 py-3 rounded-xl font-medium text-sm text-gray-700 hover:text-red-600 transition-colors duration-300 flex items-center gap-3">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                  </svg>
+                <cdx-button 
+                  class="w-full justify-start" 
+                  weight="quiet" 
+                  action="destructive"
+                  @click="auth.logout"
+                >
+                  <template #icon><cdx-icon :icon="cdxIconLogOut" /></template>
                   Logout
-                </button>
+                </cdx-button>
               </div>
-
-              <div v-else>
-                <button @click="auth.login" class="glass-button-primary w-full px-4 py-3 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-3 shadow-lg">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                  </svg>
+              <div v-else class="px-2">
+                <cdx-button 
+                  class="w-full" 
+                  action="progressive" 
+                  weight="primary"
+                  @click="auth.login"
+                >
+                  <template #icon><cdx-icon :icon="cdxIconLogIn" /></template>
                   Login
-                </button>
+                </cdx-button>
               </div>
             </div>
           </div>
         </div>
-      </transition>
-    </div>
-  </nav>
+      </div>
+    </transition>
+  </header>
+  <!-- Spacer to prevent content overlap since header is fixed -->
+  <div class="h-16"></div>
 </template>
 
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from "../stores/auth"
 
-const mobileMenuOpen = ref(false)
+// 1. COMPONENT-WISE IMPORTS
+import { CdxButton, CdxIcon } from '@wikimedia/codex'
 
+// 2. ICON IMPORTS
+import { 
+  cdxIconEdit, 
+  cdxIconUserGroup, 
+  cdxIconLogIn, 
+  cdxIconLogOut,
+  cdxIconMenu,
+  cdxIconClose,
+  cdxIconUserAvatar,
+  cdxIconWikitext // Using this as a generic logo placeholder
+} from '@wikimedia/codex-icons'
+
+// Renaming the logo icon for clarity in template
+const cdxIconLogo = cdxIconWikitext
+
+const mobileMenuOpen = ref(false)
 const auth = useAuthStore()
 
 const userInitials = computed(() => {
   if (!auth.user) return 'U'
-
   const name = auth.user.trim()
   const words = name.split(' ')
-
   if (words.length >= 2) {
     return (words[0][0] + words[1][0]).toUpperCase()
   }
-
   return name.substring(0, 2).toUpperCase()
 })
 
@@ -176,8 +208,6 @@ const toggleMobileMenu = () => {
 
 onMounted(async () => {
   await auth.fetchUser()
-  console.log('Auth state:', auth)
-  console.log('User:', auth.user)
 })
 
 const navLinks = [
@@ -187,78 +217,35 @@ const navLinks = [
 </script>
 
 <style scoped>
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-  
+/* CODEX AUTHENTICITY 
+   We use CSS variables provided by Codex to ensure the colors 
+   automatically match standard Wikimedia themes (and Dark Mode if enabled).
+*/
+
+.codex-navbar {
+  background-color: var(--background-color-base);
+  border-bottom-color: var(--border-color-subtle);
+  /* Fallback for safety if CSS tokens aren't loaded yet */
+  background-color: #ffffff; 
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Override specific Tailwind utilities with Codex tokens 
+   where exact Wiki-compliance is needed 
+*/
+
+.text-gray-900 {
+  color: var(--color-base, #202122);
 }
 
-.glass-icon {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  transition: all 0.3s ease;
-  
+.text-gray-500 {
+  color: var(--color-subtle, #54595d);
 }
 
-.glass-icon:hover {
-  background: rgba(255, 255, 255, 0.4);
+.bg-gray-100 {
+  background-color: var(--background-color-interactive-subtle, #f8f9fa);
 }
 
-.glass-hover {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-.glass-button {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.glass-button:hover {
-  background: rgba(255, 255, 255, 0.35);
-  transform: translateY(-1px);
-}
-
-.glass-button:active {
-  transform: translateY(0);
-}
-
-.glass-button-primary {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(6, 182, 212, 0.8) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.glass-button-primary:hover {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(8, 145, 178, 0.9) 100%);
-  transform: translateY(-2px);
-}
-
-.glass-button-primary:active {
-  transform: translateY(0);
-}
-
-.nav-link {
-  position: relative;
-  overflow: hidden;
+.border-gray-200 {
+  border-color: var(--border-color-subtle, #c8ccd1);
 }
 </style>

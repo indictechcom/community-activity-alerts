@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
-    "@wikimedia/codex": "^2.3.2",
+    "@wikimedia/codex": "^2.3.3",
     "@wikimedia/codex-icons": "^2.3.2",
     "axios": "^1.12.2",
     "pinia": "^3.0.3",
