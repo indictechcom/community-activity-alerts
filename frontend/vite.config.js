@@ -7,4 +7,11 @@ export default defineConfig({
   plugins: [vue(),
   tailwindcss(),
   ],
+  server: {
+    host: true,
+    watch: {
+      usePolling: true,
+    }
+  }
 });
+

@@ -8,13 +8,15 @@ from datetime import datetime, timedelta
 import logging
 import time
 from random import uniform
+from backend.utils import getHeader
+from backend.config import get_db_connection, get_db_credentials, API_CONFIG
 
 # --- Configure logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Fetch project list from SiteMatrix ---
 sitematrix_url = "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json"
-response = requests.get(sitematrix_url)
+response = requests.get(sitematrix_url, headers=getHeader())
 data = response.json()
 
 projects = set()
@@ -33,29 +35,19 @@ for key, val in sitematrix.items():
                 cleaned_url = site_url.replace("https://", "")
                 projects.add(cleaned_url)
 
-# --- Date range for last 3 complete years ---
+# --- Date range for last 24 months ---
 today = datetime.utcnow().date()
-current_month_start = today.replace(day=1)
-end_date = current_month_start - timedelta(days=1)
-start_year = end_date.year - 3
-start_date = datetime(start_year, 1, 1).date()
+end_date = today.replace(day=1)  # First day of current month
+start_date = (end_date - timedelta(days=730)).replace(day=1)  # Approximately 24 months ago
 
 start = start_date.strftime("%Y%m%d")
 end = end_date.strftime("%Y%m%d")
 
 # --- Connect to DB ---
-DB_NAME = 'community_alerts'
+credentials = get_db_credentials()
 DB_TABLE = 'editor_counts'
 
-conn = pymysql.connect(
-    host='localhost', # db for docker setup
-    user='wikim',
-    password='wikimedia',
-    database=DB_NAME,
-    charset='utf8mb4',
-    autocommit=True
-)
-
+conn = get_db_connection()
 cursor = conn.cursor()
 
 # --- Ensure editor counts table exists ---
@@ -81,7 +73,7 @@ for project in sorted(projects):
     logging.info(f"Fetching editor counts for {project} from {start} to {end}")
 
     url = f"{base_url}/{project}/{editor_type}/{page_type}/{activity_level}/{granularity}/{start}/{end}"
-    response = requests.get(url)
+    response = requests.get(url, headers=getHeader())
     if response.status_code != 200:
         logging.warning(f"API Error for {project}: {response.status_code} - {response.text}")
         time.sleep(uniform(1, 3))
