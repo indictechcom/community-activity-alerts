@@ -1,2 +1,5 @@
 # Run at midnight on the 1st of each month
 0 0 1 * * root python /usr/src/cron/fetch_and_store_cron.py >> /var/log/cron.log 2>&1
+
+# Run editor counts at 2 AM on the 1st of each month (after edit counts complete)
+0 2 1 * * root python /usr/src/cron/fetch_and_store_editors_cron.py >> /var/log/cron.log 2>&1

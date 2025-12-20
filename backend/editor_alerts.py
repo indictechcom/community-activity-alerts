@@ -12,7 +12,7 @@ SOURCE_TABLE = 'editor_counts'
 ALERTS_TABLE = 'editor_alerts'
 
 # --- Function to detect peaks ---
-def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
+def find_peaks_rolling_3_years(df, threshold_percentage=0.3):
     df = df.sort_values("timestamp").reset_index(drop=True)
     peaks = []
 
@@ -20,11 +20,15 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
         t_i = df.at[i, "timestamp"]
         editors_i = df.at[i, "editor_count"]
 
-        window = df[(df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] <= t_i)]
-        if window.empty:
+        # Use only historical data (before current timestamp) for rolling window
+        window = df[(df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] < t_i)]
+        if window.empty or len(window) < 2:  # Need at least 2 data points
             continue
 
         rolling_mean = window["editor_count"].mean()
+        if rolling_mean == 0:  # Avoid division by zero
+            continue
+            
         threshold = rolling_mean * (1 + threshold_percentage)
         pct_diff = ((editors_i - rolling_mean) / rolling_mean) * 100
 
@@ -96,6 +100,9 @@ def main():
                     ))
                 except Exception as e:
                     logging.error(f"DB insert failed for {project} on {peak['timestamp']}: {e}")
+            
+            # Commit the transaction for this project
+            conn.commit()
 
     conn.close()
     logging.info("Editor peak detection completed for all projects.")

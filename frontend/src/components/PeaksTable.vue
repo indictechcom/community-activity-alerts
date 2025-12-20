@@ -26,7 +26,7 @@
         <thead>
           <tr class="border-b-2 border-gray-200">
             <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 first:rounded-tl-lg">Date</th>
-            <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 text-right">Edits</th>
+            <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 text-right">{{ getCountLabel() }}</th>
             <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 text-right">Rolling Mean</th>
             <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 text-right">Threshold</th>
             <th class="py-3 px-4 text-sm font-bold text-gray-900 bg-gray-50 text-right last:rounded-tr-lg">% Diff</th>
@@ -43,9 +43,9 @@
               {{ formatDate(peak.timestamp) }}
             </td>
             
-            <!-- Edits -->
+            <!-- Edits or Editors -->
             <td class="py-3 px-4 text-sm text-gray-900 text-right font-mono">
-              {{ peak.edits.toLocaleString() }}
+              {{ getCountValue(peak).toLocaleString() }}
             </td>
             
             <!-- Rolling Mean -->
@@ -99,6 +99,19 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// Get the appropriate count value (edits or editors)
+const getCountValue = (peak) => {
+  return peak.edits !== undefined ? peak.edits : peak.editors
+}
+
+// Get the appropriate label for the count column
+const getCountLabel = () => {
+  if (props.peaks && props.peaks.length > 0) {
+    return props.peaks[0].edits !== undefined ? 'Edits' : 'Editors'
+  }
+  return 'Count'
 }
 
 // Codex Standard Status Colors
