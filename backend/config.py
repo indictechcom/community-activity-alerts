@@ -22,7 +22,7 @@ def get_db_credentials():
         return {
             "user": "wikim",
             "password": "wikimedia",
-            "host": "db",  # db for docker setup
+            "host": "db",  # db for docker setup and localhost for manual setup
             "database": "community_alerts",
             "DB_TABLE": "edit_counts"
         }

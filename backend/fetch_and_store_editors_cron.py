@@ -35,10 +35,10 @@ for key, val in sitematrix.items():
                 cleaned_url = site_url.replace("https://", "")
                 projects.add(cleaned_url)
 
-# --- Date range for last 24 months ---
+# --- Date range for last 36 months ---
 today = datetime.utcnow().date()
 end_date = today.replace(day=1)  # First day of current month
-start_date = (end_date - timedelta(days=730)).replace(day=1)  # Approximately 24 months ago
+start_date = (end_date - timedelta(days=1080)).replace(day=1)  # Approximately 36 months ago
 
 start = start_date.strftime("%Y%m%d")
 end = end_date.strftime("%Y%m%d")

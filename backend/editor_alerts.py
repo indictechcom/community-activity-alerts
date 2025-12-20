@@ -12,7 +12,7 @@ SOURCE_TABLE = 'editor_counts'
 ALERTS_TABLE = 'editor_alerts'
 
 # --- Function to detect peaks ---
-def find_peaks_rolling_3_years(df, threshold_percentage=0.05):
+def find_peaks_rolling_3_years(df, threshold_percentage=0.3):
     df = df.sort_values("timestamp").reset_index(drop=True)
     peaks = []
 
