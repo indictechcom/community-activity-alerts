@@ -20,13 +20,15 @@ jobs:
 
       # 3. Build the Frontend
       - name: Build Vue App
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+
         run: |
           echo "Building Frontend..."
           cd frontend  
           npm install
           npm run build
           echo "Frontend Built!"
-
       # 4. Setup SSH Agent 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
@@ -39,53 +41,29 @@ jobs:
       # 5. Deploy (SCP + SSH)
       - name: Deploy to Toolforge
         env:
-          SSH_USER: ${{ secrets.TOOLFORGE_USER }}   
-          TOOL_NAME: ${{ secrets.TOOL_NAME }}       
+          SSH_USER: ${{ secrets.TOOLFORGE_USER }}
+          TOOL_NAME: ${{ secrets.TOOL_NAME }}
           HOST: login.toolforge.org
-          # PATHS
-          DEST_STATIC: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src/static"
+          DEST_STATIC: "/data/project/${{ secrets.TOOL_NAME }}/www/python/static"
           BACKEND_DIR: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src"
         run: |
-          echo "Starting Deployment to $TOOL_NAME..."
-
-          # A. Upload the BUILT frontend to your personal home dir first
-          # (Can't upload directly to the tool dir because of permissions)
+          set -e
+      
           echo "Uploading built assets..."
-          scp -r frontend/dist/* $SSH_USER@$HOST:~/tmp_vue_build/
-
-          # B. SSH in and move files + update backend
-          echo "🔧 Connecting to server to finish update..."
-          ssh $SSH_USER@$HOST <<EOF
+          scp -r frontend/dist/* \
+            "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
+      
+          echo "Deploying on Toolforge..."
+          ssh "$SSH_USER@$HOST" "
             set -e
-
-            # 1. Fix permissions so the 'tool' user can read your uploaded files
-            chmod -R 755 ~/tmp_vue_build
-
-            # 2. Switch to the Tool user
-            become $TOOL_NAME bash -c "
-              echo 'Switched to tool user'
-
-              # 3. Pull latest Backend (Python) code
-              cd $BACKEND_DIR
-              if [ -d .git ]; then
-                echo '⬇️ Pulling backend changes...'
-                git pull origin main
-              else
-                echo 'Git not initialized in backend dir!'
-              fi
-
-              # 4. Move Frontend files to the static folder
-              echo 'nm Updating static files...'
-              mkdir -p $DEST_STATIC
-              # Copy from your user home dir to the tool dir
-              cp -r /data/project/$SSH_USER/tmp_vue_build/* $DEST_STATIC/
-
-              # 5. Restart the Webservice
-              echo '🔄 Restarting Webservice...'
+            chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build
+            become $TOOL_NAME bash -c '
+              set -e
+              cd \"$BACKEND_DIR\"
+              git pull origin main
+              rm -rf \"$DEST_STATIC\"
+              mkdir -p \"$DEST_STATIC\"
+              rsync -a /data/project/$TOOL_NAME/frontend-build/ \"$DEST_STATIC/\"
               webservice python3.13 restart
-            "
-
-            # 6. Cleanup your home dir
-            rm -rf ~/tmp_vue_build
-            echo "Deploy Complete!"
-          EOF
+            '
+          "
