@@ -194,7 +194,7 @@ const languageOptions = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/communities`);
+    const response = await axios.get(`/api/communities`);
     const data = response.data;
     processCommunityData(data);
   } catch (error) {

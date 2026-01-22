@@ -1,0 +1,69 @@
+name: Deploy to Toolforge
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Get the code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup Node to build Vue
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Build the Frontend
+      - name: Build Vue App
+        env:
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+
+        run: |
+          echo "Building Frontend..."
+          cd frontend  
+          npm install
+          npm run build
+          echo "Frontend Built!"
+      # 4. Setup SSH Agent 
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.TOOLFORGE_SSH_KEY }}
+
+      - name: Add Known Hosts
+        run: ssh-keyscan login.toolforge.org >> ~/.ssh/known_hosts
+
+      # 5. Deploy (SCP + SSH)
+      - name: Deploy to Toolforge
+        env:
+          SSH_USER: ${{ secrets.TOOLFORGE_USER }}
+          TOOL_NAME: ${{ secrets.TOOL_NAME }}
+          HOST: login.toolforge.org
+          DEST_STATIC: "/data/project/${{ secrets.TOOL_NAME }}/www/python/static"
+          BACKEND_DIR: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src"
+        run: |
+          set -e
+      
+          echo "Uploading built assets..."
+          scp -r frontend/dist/* \
+            "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
+      
+          echo "Deploying on Toolforge..."
+          ssh "$SSH_USER@$HOST" "
+            set -e
+            chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build
+            become $TOOL_NAME bash -c '
+              set -e
+              cd \"$BACKEND_DIR\"
+              git pull origin main
+              rm -rf \"$DEST_STATIC\"
+              mkdir -p \"$DEST_STATIC\"
+              rsync -a /data/project/$TOOL_NAME/frontend-build/ \"$DEST_STATIC/\"
+              webservice python3.13 restart
+            '
+          "

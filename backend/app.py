@@ -14,7 +14,7 @@ from utils import getHeader
 from config import get_db_connection
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-app = Flask(__name__, static_folder="../static")
+app = Flask(__name__, static_folder="../../static")
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 

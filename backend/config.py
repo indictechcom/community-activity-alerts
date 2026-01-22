@@ -6,16 +6,18 @@ import pymysql
 load_dotenv()
 
 ENV = os.getenv("ENV", "dev")
+DB_NAME = os.getenv("DB_NAME")
+REPLICA_CNF_PATH = os.getenv("REPLICA_CNF_PATH")
 
 def get_db_credentials():
     if ENV == "prod":
         cfg = configparser.ConfigParser()
-        cfg.read("/data/project/community-activity-alerts-system/replica.my.cnf")
+        cfg.read(REPLICA_CNF_PATH)
         return {
             "user": cfg["client"]["user"],
             "password": cfg["client"]["password"],
             "host": "tools.db.svc.wikimedia.cloud",
-            "database": "s56391__community_alerts", #Your toolforge db name
+            "database": DB_NAME, #Your toolforge db name
             "DB_TABLE": "edit_counts"
         }
     else:
@@ -23,7 +25,7 @@ def get_db_credentials():
             "user": "wikim",
             "password": "wikimedia",
             "host": "db",  # db for docker setup and localhost for manual setup
-            "database": "community_alerts",
+            "database": DB_NAME, #Your local db name
             "DB_TABLE": "edit_counts"
         }
     
