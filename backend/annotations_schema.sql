@@ -1,6 +1,3 @@
-GRANT ALL PRIVILEGES ON community_alerts.* TO 'wikim'@'%';
-FLUSH PRIVILEGES;
-
 -- Annotations table: stores user-submitted annotations for peaks
 CREATE TABLE IF NOT EXISTS peak_annotations (
     id INT AUTO_INCREMENT PRIMARY KEY,
