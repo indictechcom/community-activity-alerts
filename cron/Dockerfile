@@ -10,6 +10,7 @@ COPY backend/fetch_and_store_editors_cron.py .
 COPY backend/utils.py backend/config.py /usr/src/app/backend/
 
 ENV PYTHONPATH=/usr/src/app
+ENV DB_NAME=community_alerts
 
 COPY cron/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
