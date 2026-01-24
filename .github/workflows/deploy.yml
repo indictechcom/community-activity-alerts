@@ -48,7 +48,9 @@ jobs:
           BACKEND_DIR: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src"
         run: |
           set -e
-      
+
+          ssh "$SSH_USER@$HOST" "rm -rf /data/project/$TOOL_NAME/frontend-build/*"
+          
           echo "Uploading built assets..."
           scp -r frontend/dist/* \
             "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
@@ -56,14 +58,24 @@ jobs:
           echo "Deploying on Toolforge..."
           ssh "$SSH_USER@$HOST" "
             set -e
+            # Ensure group write permissions so the tool user can read the files
             chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build
+            
             become $TOOL_NAME bash -c '
               set -e
               cd \"$BACKEND_DIR\"
+              echo \"Pulling latest code...\"
               git pull origin main
+              
+              echo \"Preparing static directory...\"
               rm -rf \"$DEST_STATIC\"
               mkdir -p \"$DEST_STATIC\"
-              rsync -a --delete /data/project/$TOOL_NAME/frontend-build/ \"$DEST_STATIC/\"
+              
+              echo \"Syncing files...\"
+              cp -r /data/project/$TOOL_NAME/frontend-build/* \"$DEST_STATIC/\"
+              
+              echo \"Restarting webservice...\"
               webservice python3.13 restart
+              echo \"Deployment Complete!\"
             '
           "
