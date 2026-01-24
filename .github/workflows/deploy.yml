@@ -48,34 +48,44 @@ jobs:
           BACKEND_DIR: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src"
         run: |
           set -e
-
+      
+          echo "Clearing frontend-build on Toolforge"
           ssh "$SSH_USER@$HOST" "rm -rf /data/project/$TOOL_NAME/frontend-build/*"
-          
-          echo "Uploading built assets..."
+      
+          echo "Uploading frontend build"
           scp -r frontend/dist/* \
             "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
       
-          echo "Deploying on Toolforge..."
-          ssh "$SSH_USER@$HOST" "
+          echo "Deploying on Toolforge"
+          ssh "$SSH_USER@$HOST" <<EOF
             set -e
-            # Ensure group write permissions so the tool user can read the files
+      
             chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build
-            
-            become $TOOL_NAME bash -c '
+      
+            become $TOOL_NAME <<'INNER'
               set -e
-              cd \"$BACKEND_DIR\"
-              echo \"Pulling latest code...\"
+      
+              echo "Running as:"
+              whoami
+      
+              echo "frontend-build contents:"
+              ls -lah /data/project/$TOOL_NAME/frontend-build
+              ls -lah /data/project/$TOOL_NAME/frontend-build/assets
+      
+              cd "$BACKEND_DIR"
               git pull origin main
-              
-              echo \"Preparing static directory...\"
-              rm -rf \"$DEST_STATIC\"
-              mkdir -p \"$DEST_STATIC\"
-              
-              echo \"Syncing files...\"
-              cp -r /data/project/$TOOL_NAME/frontend-build/* \"$DEST_STATIC/\"
-              
-              echo \"Restarting webservice...\"
+      
+              rm -rf "$DEST_STATIC"
+              mkdir -p "$DEST_STATIC"
+      
+              rsync -av --delete \
+                /data/project/$TOOL_NAME/frontend-build/ \
+                "$DEST_STATIC/"
+      
+              echo "static contents after sync:"
+              ls -lah "$DEST_STATIC"
+              ls -lah "$DEST_STATIC/assets"
+      
               webservice python3.13 restart
-              echo \"Deployment Complete!\"
-            '
-          "
+            INNER
+          EOF
