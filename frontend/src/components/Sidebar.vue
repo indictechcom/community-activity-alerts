@@ -81,16 +81,19 @@
 
         <!-- Quick Ranges -->
         <div class="grid grid-cols-2 gap-2">
-          <cdx-button 
-            v-for="option in quickRanges" 
-            :key="option.label" 
+          <cdx-button
+            v-for="option in quickRanges"
+            :key="option.value"
             @click="applyQuickRange(option.value)"
-            weight="quiet"
             size="medium"
+            class="quick-range-btn"
+            :class="{ 'is-active': option.value === activeRange }"
+            :title="getFullLabel(option.value)"
           >
             {{ option.label }}
           </cdx-button>
         </div>
+
       </div>
 
       <!-- Fetch Data Button -->
@@ -119,9 +122,7 @@
       :aria-label="isOpen ? 'Close filters' : 'Open filters'"
       class="shadow-lg"
     >
-      <template #icon>
-        <cdx-icon :icon="isOpen ? cdxIconClose : cdxIconFunnel" />
-      </template>
+      <cdx-icon :icon="isOpen ? cdxIconClose : cdxIconMenu" />
     </cdx-button>
   </div>
 
@@ -152,7 +153,7 @@ import {
   CdxIcon, 
   CdxField, 
   CdxSelect, 
-  CdxTextInput 
+  CdxTextInput ,
 } from '@wikimedia/codex';
 
 // 2. Codex Icon Imports
@@ -162,6 +163,7 @@ import {
   cdxIconLanguage, 
   cdxIconCalendar, 
   cdxIconSearch,
+  cdxIconMenu,
   cdxIconClose
 } from '@wikimedia/codex-icons';
 
@@ -192,9 +194,19 @@ const languageOptions = computed(() => {
   return availableLanguages.value.map(l => ({ value: l, label: l }));
 });
 
+const getFullLabel = (value) => {
+  switch (value) {
+    case '3m': return 'Last 3 Months';
+    case '6m': return 'Last 6 Months';
+    case 'ytd': return 'Year to Date';
+    case 'all': return 'All Time';
+    default: return '';
+  }
+};
+
 onMounted(async () => {
   try {
-    const response = await axios.get(`/api/communities`);
+    const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/communities`);
     const data = response.data;
     processCommunityData(data);
   } catch (error) {
