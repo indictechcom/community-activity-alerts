@@ -63,7 +63,7 @@ jobs:
               git pull origin main
               rm -rf \"$DEST_STATIC\"
               mkdir -p \"$DEST_STATIC\"
-              rsync -a /data/project/$TOOL_NAME/frontend-build/ \"$DEST_STATIC/\"
+              rsync -a --delete /data/project/$TOOL_NAME/frontend-build/ \"$DEST_STATIC/\"
               webservice python3.13 restart
             '
           "
