@@ -44,48 +44,20 @@ jobs:
           SSH_USER: ${{ secrets.TOOLFORGE_USER }}
           TOOL_NAME: ${{ secrets.TOOL_NAME }}
           HOST: login.toolforge.org
-          DEST_STATIC: "/data/project/${{ secrets.TOOL_NAME }}/www/python/static"
-          BACKEND_DIR: "/data/project/${{ secrets.TOOL_NAME }}/www/python/src"
         run: |
           set -e
-      
+          
           echo "Clearing frontend-build on Toolforge"
           ssh "$SSH_USER@$HOST" "rm -rf /data/project/$TOOL_NAME/frontend-build/*"
-      
+          
           echo "Uploading frontend build"
-          scp -r frontend/dist/* \
-            "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
-      
+          scp -r frontend/dist/* "$SSH_USER@$HOST:/data/project/$TOOL_NAME/frontend-build/"
+          
+          echo "Verifying upload"
+          ssh "$SSH_USER@$HOST" "ls -la /data/project/$TOOL_NAME/frontend-build/"
+          
+          echo "Setting permissions"
+          ssh "$SSH_USER@$HOST" "chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build"
+          
           echo "Deploying on Toolforge"
-          ssh "$SSH_USER@$HOST" <<EOF
-            set -e
-      
-            chmod -R g+rwX /data/project/$TOOL_NAME/frontend-build
-      
-            become $TOOL_NAME <<'INNER'
-              set -e
-      
-              echo "Running as:"
-              whoami
-      
-              echo "frontend-build contents:"
-              ls -lah /data/project/$TOOL_NAME/frontend-build
-              ls -lah /data/project/$TOOL_NAME/frontend-build/assets
-      
-              cd "$BACKEND_DIR"
-              git pull origin main
-      
-              rm -rf "$DEST_STATIC"
-              mkdir -p "$DEST_STATIC"
-      
-              rsync -av --delete \
-                /data/project/$TOOL_NAME/frontend-build/ \
-                "$DEST_STATIC/"
-      
-              echo "static contents after sync:"
-              ls -lah "$DEST_STATIC"
-              ls -lah "$DEST_STATIC/assets"
-      
-              webservice python3.13 restart
-            INNER
-          EOF
+          ssh -tt "$SSH_USER@$HOST" "become $TOOL_NAME bash -c 'set -ex && cd /data/project/$TOOL_NAME/www/python/src && git fetch origin && git reset --hard origin/main && rm -rf /data/project/$TOOL_NAME/www/python/static && mkdir -p /data/project/$TOOL_NAME/www/python/static && rsync -av --delete /data/project/$TOOL_NAME/frontend-build/ /data/project/$TOOL_NAME/www/python/static/ && ls -la /data/project/$TOOL_NAME/www/python/static/ && webservice python3.13 restart'"
