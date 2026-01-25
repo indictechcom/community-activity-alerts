@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 import logging
 from config import get_db_connection
-from annotation_utils import (
+from annotation.annotation_utils import (
     get_user_edit_count,
     is_reviewer,
     log_annotation_action,

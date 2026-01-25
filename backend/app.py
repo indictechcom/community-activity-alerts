@@ -49,7 +49,7 @@ from auth.routes import create_auth_blueprint
 auth_bp = create_auth_blueprint(mwo_auth)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 
-from annotation_routes import create_annotation_blueprint
+from annotation.routes import create_annotation_blueprint
 annotation_bp = create_annotation_blueprint(mwo_auth)
 app.register_blueprint(annotation_bp, url_prefix='/api/annotations')
 
