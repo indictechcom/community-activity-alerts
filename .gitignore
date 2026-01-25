@@ -1,0 +1,6 @@
+# Runtime / server-only files
+.env
+uwsgi.ini
+wsgi.py
+__pycache__/
+*.pyc
