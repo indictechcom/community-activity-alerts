@@ -14,6 +14,10 @@ def get_user_edit_count(username):
     """
     try:
         url = "https://meta.wikimedia.org/w/api.php"
+
+        headers = {
+            "User-Agent": "CommunityActivityAlerts/1.0 (CommunityActivityAlerts@example.com)" 
+        }
         params = {
             "action": "query",
             "meta": "globaluserinfo",
@@ -22,7 +26,7 @@ def get_user_edit_count(username):
             "format": "json"
         }
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, headers=headers, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
         
