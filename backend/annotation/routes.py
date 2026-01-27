@@ -28,7 +28,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         data = request.json
         
         # Validate required fields
@@ -53,13 +53,15 @@ def create_annotation_blueprint(mwo_auth):
         # Validate peak_type
         if peak_type not in ['edit', 'editor']:
             return jsonify({"error": "Invalid peak_type"}), 400
-        
         # Check user's global edit count
         edit_count = get_user_edit_count(username)
         if edit_count is None:
-            return jsonify({"error": "Unable to verify edit count"}), 500
+            if is_reviewer(username):
+                edit_count = 9999 #faking edit count for a reviewer
+            else:
+                return jsonify({"error": "Unable to verify edit count"}), 500
         
-        if edit_count < 1000:
+        if edit_count < 1000 and not is_reviewer(username):
             return jsonify({
                 "error": f"Insufficient edit count. Required: 1000, Current: {edit_count}"
             }), 403
@@ -155,7 +157,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
@@ -206,7 +208,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
@@ -369,7 +371,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         data = request.json
         
         annotation_id = data.get('annotation_id')
@@ -460,7 +462,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
@@ -516,7 +518,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
@@ -652,7 +654,7 @@ def create_annotation_blueprint(mwo_auth):
         if not current_user:
             return jsonify({"error": "Authentication required"}), 401
         
-        username = current_user[0]
+        username = current_user
         
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
