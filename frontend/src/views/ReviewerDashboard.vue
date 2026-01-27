@@ -1,6 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="min-h-screen bg-gray-50 font-sans text-[#202122]">
+    <Navbar />
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Reviewer Dashboard</h1>
@@ -242,6 +244,7 @@ import { cdxIconArticle, cdxIconFlag, cdxIconCheck, cdxIconEdit, cdxIconClose } 
 import ReviewAnnotationModal from '../components/ReviewAnnotationModal.vue'
 import ReviewReportModal from '../components/ReviewReportModal.vue'
 import axios from 'axios'
+import Navbar from '../components/Navbar.vue'
 
 const activeTab = ref('annotations')
 const loading = ref(false)

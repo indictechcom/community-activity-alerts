@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import EditCounts from '../views/EditCounts.vue';
 import EditorCounts from '../views/EditorCounts.vue';
+import ReviewerDashboard from '../views/ReviewerDashboard.vue';
 
 const routes = [
   {
@@ -12,6 +13,12 @@ const routes = [
     path: '/editor-counts',
     name: 'EditorCounts',
     component: EditorCounts
+  },
+    {
+    path: '/reviewer',
+    name: 'ReviewerDashboard',
+    component: ReviewerDashboard,
+    meta: { requiresAuth: true }
   }
 ];
 
