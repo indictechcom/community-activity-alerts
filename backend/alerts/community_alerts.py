@@ -52,20 +52,6 @@ def main():
     # Connect to DB
     conn = get_db_connection()
 
-    # Ensure alerts table exists
-    with conn.cursor() as cursor:
-        cursor.execute(f"""
-        CREATE TABLE IF NOT EXISTS {ALERTS_TABLE} (
-            project VARCHAR(255),
-            timestamp DATETIME,
-            edit_count INT,
-            rolling_mean FLOAT,
-            threshold FLOAT,
-            percentage_difference FLOAT,
-            PRIMARY KEY (project, timestamp)
-        )
-        """)
-
     # Read full edit data
     df = pd.read_sql(f"SELECT * FROM {SOURCE_TABLE}", conn)
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)

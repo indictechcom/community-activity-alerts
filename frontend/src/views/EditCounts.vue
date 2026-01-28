@@ -56,7 +56,7 @@
               :subtitle="currentContext.subtitle"
             />
             
-            <PeaksTable :peaks="activityData.peaks" />
+            <PeaksTable :peaks="activityData.peaks" :project="projectName" />
           </div>
 
           <!-- 4. INITIAL / EMPTY STATE -->
@@ -91,6 +91,7 @@ import SidebarFilters from '../components/Sidebar.vue' // Renamed from Sidebar t
 import ActivityChart from '../components/ActivityChart.vue'  // Using the new Chart component name
 import PeaksTable from '../components/PeaksTable.vue'  // Using the new Table component name
 
+const projectName = ref(null)
 const loading = ref(false)
 const error = ref(null)
 const activityData = ref(null)
@@ -117,6 +118,7 @@ const fetchActivityData = async (filters) => {
   const projName = filters.project_group.charAt(0).toUpperCase() + filters.project_group.slice(1)
   currentContext.title = `${langName} ${projName}`
   currentContext.subtitle = `Activity from ${filters.datestart} to ${filters.dateend}`
+  projectName.value = projName
 
   try {
     const params = {

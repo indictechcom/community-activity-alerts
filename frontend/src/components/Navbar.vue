@@ -212,7 +212,8 @@ onMounted(async () => {
 
 const navLinks = [
   { name: 'Edit Counts', path: '/' },
-  { name: 'Editor Counts', path: '/editor-counts' }
+  { name: 'Editor Counts', path: '/editor-counts' },
+  { name: 'Reviewer Dashboard', path: '/reviewer' }
 ]
 </script>
 

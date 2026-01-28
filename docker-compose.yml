@@ -38,11 +38,17 @@ services:
     container_name: backend
     ports:
      - "5000:5000"
+    volumes:
+      - ./backend:/usr/src/app
     depends_on:
       db:
         condition: service_healthy
       cron:
         condition: service_started
+    environment:
+      VITE_BACKEND_URL : http://localhost:5000/
+      ENV : dev
+      PYTHONUNBUFFERED: 1
     restart: always
     networks:
       - comm-alerts
@@ -59,6 +65,8 @@ services:
     depends_on:
       backend:
         condition: service_started
+    environment:
+      VITE_BACKEND_URL : http://localhost:5000/
     restart: always
     networks:
       - comm-alerts 
