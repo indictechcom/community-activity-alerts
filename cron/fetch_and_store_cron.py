@@ -49,28 +49,6 @@ conn = get_db_connection()
 
 cursor = conn.cursor()
 
-# --- Ensure main table exists ---
-create_table_sql = f"""
-CREATE TABLE IF NOT EXISTS {credentials["DB_TABLE"]} (
-    timestamp DATETIME,
-    edit_count INT,
-    project VARCHAR(255),
-    PRIMARY KEY (timestamp, project)
-)
-"""
-cursor.execute(create_table_sql)
-
-# --- Optional: Metadata table for fetch status ---
-# cursor.execute('''
-# CREATE TABLE IF NOT EXISTS fetch_runs (
-#     run_time DATETIME,
-#     project VARCHAR(255),
-#     status VARCHAR(20),
-#     message TEXT
-# )
-# ''')
-
-
 
 # --- Loop through projects ---
 for project in sorted(projects):
