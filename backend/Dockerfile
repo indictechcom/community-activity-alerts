@@ -15,7 +15,5 @@ ENV BASE_URL=http://localhost:5000
 ENV FRONTEND_URL=http://localhost:5173
 
 ENV MWO_BASE_URL=https://meta.wikimedia.org/w
-ENV CONSUMER_KEY=2c0cadd0de785d972762c3bed8665043
-ENV CONSUMER_SECRET=325f89a61315b162c120b17a34a26865d58ffbb3
 
 CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]

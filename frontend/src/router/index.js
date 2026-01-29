@@ -14,7 +14,7 @@ const routes = [
     name: 'EditorCounts',
     component: EditorCounts
   },
-    {
+  {
     path: '/reviewer',
     name: 'ReviewerDashboard',
     component: ReviewerDashboard,
