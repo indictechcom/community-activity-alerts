@@ -274,7 +274,7 @@ const formatDate = (dateString) => {
 
 const fetchStats = async () => {
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
     const response = await axios.get(`${apiUrl}/api/annotations/stats`, {
       withCredentials: true
     })
@@ -287,7 +287,7 @@ const fetchStats = async () => {
 const fetchPendingAnnotations = async () => {
   loading.value = true
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
     const response = await axios.get(`${apiUrl}/api/annotations/pending`, {
       withCredentials: true
     })
@@ -302,7 +302,7 @@ const fetchPendingAnnotations = async () => {
 const fetchPendingReports = async () => {
   loading.value = true
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
     const response = await axios.get(`${apiUrl}/api/annotations/reports/pending`, {
       withCredentials: true
     })

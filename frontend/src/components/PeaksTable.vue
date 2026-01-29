@@ -200,7 +200,7 @@ const getBadgeStyles = (percentage) => {
 const fetchAnnotations = async () => {
   if (!props.peaks || props.peaks.length === 0) return
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+  const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
   const peakType = props.peaks[0].edits !== undefined ? 'edit' : 'editor'
 
   for (const peak of props.peaks) {
@@ -260,10 +260,6 @@ watch(() => props.peaks, () => {
   }
 }, { immediate: true })
 
-// Fetch annotations on mount
-onMounted(() => {
-  fetchAnnotations()
-})
 </script>
 
 <style scoped>
