@@ -1,7 +1,7 @@
 import requests
 import logging
+from utils import getHeader
 from config import get_db_connection
-from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,9 +15,7 @@ def get_user_edit_count(username):
     try:
         url = "https://meta.wikimedia.org/w/api.php"
 
-        headers = {
-            "User-Agent": "CommunityActivityAlerts/1.0 (CommunityActivityAlerts@example.com)" 
-        }
+        headers = getHeader()
         params = {
             "action": "query",
             "meta": "globaluserinfo",

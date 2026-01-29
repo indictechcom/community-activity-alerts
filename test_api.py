@@ -1,5 +1,4 @@
 import requests
-import json
 
 # Test the Arabic Wikinews API endpoint
 url = 'http://localhost:5000/api/editor-activity-data'

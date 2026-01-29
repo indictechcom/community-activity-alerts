@@ -1,6 +1,5 @@
 import os
 import logging
-import pymysql
 # Ensure we can import config relative to this script
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
