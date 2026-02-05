@@ -126,6 +126,8 @@ def main():
     granularity = "monthly"
 
     logging.info(f"Found {len(projects)} projects to process.")
+    count = 0
+    total_projects = len(projects)
 
     # --- Loop through projects ---
     for project in sorted(projects):
