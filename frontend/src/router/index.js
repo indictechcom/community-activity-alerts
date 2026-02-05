@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import EditCounts from '../views/EditCounts.vue';
 import EditorCounts from '../views/EditorCounts.vue';
 import ReviewerDashboard from '../views/ReviewerDashboard.vue';
+import Subscriptions from '../views/Subscriptions.vue';
 
 const routes = [
   {
@@ -19,6 +20,11 @@ const routes = [
     name: 'ReviewerDashboard',
     component: ReviewerDashboard,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/subscriptions',
+    name: 'Subscriptions',
+    component: Subscriptions
   }
 ];
 
