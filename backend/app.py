@@ -210,73 +210,72 @@ def get_activity_data():
     project_group = request.args.get("project_group")
     datestart = request.args.get("datestart")
     dateend = request.args.get("dateend")
-    filter_edits = request.args.get("filter_edits") == "true"
-    filter_users = request.args.get("filter_users") == "true"
 
     if not (language and project_group and datestart and dateend):
-        print("Missing parameters", language, project_group, datestart, dateend)
         return jsonify({"error": "Missing required parameters"}), 400
 
     project = project_group
-    start = datetime.strptime(datestart, "%b %Y")
-    end = datetime.strptime(dateend, "%b %Y")
-    
-    
-    start = start.replace(day=1, hour=0, minute=0, second=0)
-    last_day = calendar.monthrange(end.year, end.month)[1]
-    end = end.replace(day=last_day, hour=23, minute=59, second=59)
-
+    start = datetime.strptime(datestart, "%b %Y").replace(day=1)
+    end_dt = datetime.strptime(dateend, "%b %Y")
+    last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
+    end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
 
     try:
-        # 3. Fetch and process data from DB (same logic as before)
         conn = get_db_connection()
-        query = """
+        
+        # 1. Fetch Chart Data (Raw Counts)
+        query_edits = """
             SELECT timestamp, edit_count AS edits
             FROM edit_counts
             WHERE project = %s AND timestamp BETWEEN %s AND %s
             ORDER BY timestamp ASC
         """
-        df = pd.read_sql(query, conn, params=(project, start, end))
+        df_edits = pd.read_sql(query_edits, conn, params=(project, start, end))
+        
+        # 2. Fetch Pre-computed Peaks from Alerts Table
+        query_peaks = """
+            SELECT timestamp, edit_count AS edits, rolling_mean, threshold, percentage_difference, label
+            FROM community_alerts
+            WHERE project = %s AND timestamp BETWEEN %s AND %s
+            ORDER BY timestamp ASC
+        """
+        df_peaks = pd.read_sql(query_peaks, conn, params=(project, start, end))
+        
         conn.close()
 
-        if df.empty:
+        if df_edits.empty:
             return jsonify({"peaks": [], "chartData": {}})
-        
 
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        peaks_raw = find_peaks_rolling_3_years(df, threshold_percentage=0.30)
-        peaks = log_peaks(peaks_raw)
-        
-         # --- Fetch labels for peaks ---
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        peak_labels = {}
+        # Format Chart Data
+        chart_timestamps = pd.to_datetime(df_edits["timestamp"]).dt.strftime('%b %Y').tolist()
+        chart_edits = df_edits["edits"].tolist()
 
-        for peak in peaks:
-            try:
-                cursor.execute(
-                    "SELECT label FROM community_alerts WHERE project = %s AND timestamp = %s",
-                    (project, peak["timestamp"]),
-                )
-                result = cursor.fetchone()
-                peak_labels[peak["timestamp"]] = (
-                    result[0] if result and result[0] else ""
-                )
-            except:
-                peak_labels[peak["timestamp"]] = ""
+        # Format Peaks Data
+        peaks = []
+        peak_timestamps_chart = []
+        peak_values_chart = []
+        peak_labels_chart = []
 
-        conn.close()
+        if not df_peaks.empty:
+            # Convert timestamp to string for JSON serialization
+            df_peaks["timestamp_str"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%Y-%m-%d')
+            df_peaks["chart_x"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%b %Y')
+            
+            for _, row in df_peaks.iterrows():
+                peaks.append({
+                    "timestamp": row["timestamp_str"],
+                    "edits": int(row["edits"]),
+                    "rolling_mean": round(float(row["rolling_mean"]), 2),
+                    "threshold": round(float(row["threshold"]), 2),
+                    "percentage_difference": round(float(row["percentage_difference"]), 2)
+                })
+                # Arrays for Plotly Trace
+                peak_timestamps_chart.append(row["chart_x"])
+                peak_values_chart.append(row["edits"])
+                peak_labels_chart.append(row["label"] if row["label"] else "")
 
-         # 4. Format data for JSON response
-        chart_timestamps = df["timestamp"].dt.strftime('%b %Y').tolist()
-        chart_edits = df["edits"].tolist()
-
-        # CORRECTED LINE: Format peak timestamps to match the chart's x-axis format.
-        peak_timestamps = [datetime.strptime(p['timestamp'], '%Y-%m-%d').strftime('%b %Y') for p in peaks]
-        peak_values = [p['edits'] for p in peaks]
-        
         response_data = {
-            "peaks": peaks, # This still contains the full timestamp for the table
+            "peaks": peaks,
             "chartData": {
                 "lineTrace": {
                     "x": chart_timestamps,
@@ -284,10 +283,10 @@ def get_activity_data():
                     "type": 'scatter', 'mode': 'lines+markers', 'name': 'Edits'
                 },
                 "peaksTrace": {
-                    "x": peak_timestamps, # Now correctly formatted for the chart
-                    "y": peak_values,
+                    "x": peak_timestamps_chart,
+                    "y": peak_values_chart,
                     "mode": 'markers+text', 'name': 'Peaks',
-                    "text": [peak_labels.get(p['timestamp'], "") for p in peaks]
+                    "text": peak_labels_chart
                 }
             }
         }
@@ -296,7 +295,6 @@ def get_activity_data():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 # --- Editor Counts API Endpoints ---
 @app.route("/api/editor-activity-data")
