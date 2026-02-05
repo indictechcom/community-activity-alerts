@@ -8,8 +8,9 @@ COPY cron/fetch_and_store_cron.py .
 COPY cron/fetch_and_store_editors_cron.py .
 
 COPY backend/utils.py backend/config.py /usr/src/app/backend/
+COPY backend/alerts /usr/src/app/backend/alerts/
 
-ENV PYTHONPATH=/usr/src/app
+ENV PYTHONPATH=/usr/src/app:/usr/src/app/backend
 ENV DB_NAME=community_alerts
 
 COPY cron/requirements.txt .
@@ -20,4 +21,12 @@ RUN chmod 0644 /etc/cron.d/monthly-cron
 
 RUN touch /var/log/cron.log
 
-CMD ["sh", "-c", "python fetch_and_store_cron.py && python fetch_and_store_editors_cron.py && cron -f"]
+# only run backfill if SKIP_BACKFILL is not set to "true"
+CMD ["sh", "-c", "\
+if [ \"$SKIP_BACKFILL\" != \"true\" ]; then \
+  python fetch_and_store_cron.py --mode backfill && \
+  python fetch_and_store_editors_cron.py --mode backfill; \
+fi && \
+python /usr/src/app/backend/alerts/community_alerts.py && \
+python /usr/src/app/backend/alerts/editor_alerts.py && \
+cron -f"]
