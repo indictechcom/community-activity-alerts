@@ -32,6 +32,7 @@ services:
         - comm-alerts
       environment:
         ENV : dev
+        SKIP_BACKFILL: "true"
 
   backend:
     build: ./backend
@@ -39,7 +40,7 @@ services:
     ports:
      - "5000:5000"
     env_file:
-      - .backend/.env
+      - ./backend/.env
     volumes:
       - ./backend:/usr/src/app
     depends_on:

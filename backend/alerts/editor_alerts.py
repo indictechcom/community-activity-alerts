@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
+import sys
+import os
 import pandas as pd
 import logging
 from config import get_db_connection
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # --- Setup logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
