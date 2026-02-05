@@ -249,7 +249,7 @@ const formatApiDate = (dateString) => {
 };
 
 const quickRanges = [
-  { label: 'Last 3m', value: '3m' }, { label: 'Last 6m', value: '6m' },
+  { label: 'Last 3m', value: '4m' }, { label: 'Last 6m', value: '7m' },
   { label: 'YTD', value: 'ytd' }, { label: 'All', value: 'all' }
 ];
 
@@ -258,7 +258,7 @@ const applyQuickRange = (range) => {
     let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
     if (range === 'all') {
-        start = new Date(2014, 0, 1);
+        start = new Date(2020, 1, 1);
     } else if (range === 'ytd') {
         start = new Date(now.getFullYear(), 0, 1);
     } else {
