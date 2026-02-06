@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y cron && apt-get clean
 
 COPY cron/fetch_and_store_cron.py .
 COPY cron/fetch_and_store_editors_cron.py .
+COPY cron/monthly_peak_detection.py /usr/src/cron/
 
+
+COPY backend/notification /usr/src/app/backend/notification/
 COPY backend/utils.py backend/config.py /usr/src/app/backend/
 COPY backend/alerts /usr/src/app/backend/alerts/
 

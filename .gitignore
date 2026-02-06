@@ -4,3 +4,4 @@ uwsgi.ini
 wsgi.py
 __pycache__/
 *.pyc
+cron/notification.log

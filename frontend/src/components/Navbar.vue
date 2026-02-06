@@ -25,7 +25,7 @@
                 class="nav-item"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Subscriptions' ? cdxIconBell : cdxIconUserGroup" />
                 </template>
                 {{ link.name }}
               </cdx-button>
@@ -119,7 +119,7 @@
                 class="w-full justify-start mb-1"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Subscriptions' ? cdxIconBell : cdxIconUserGroup" />
                 </template>
                 {{ link.name }}
               </cdx-button>
@@ -183,7 +183,8 @@ import {
   cdxIconMenu,
   cdxIconClose,
   cdxIconUserAvatar,
-  cdxIconWikitext // Using this as a generic logo placeholder
+  cdxIconWikitext, // Using this as a generic logo placeholder
+  cdxIconBell
 } from '@wikimedia/codex-icons'
 
 // Renaming the logo icon for clarity in template
@@ -213,6 +214,7 @@ onMounted(async () => {
 const navLinks = [
   { name: 'Edit Counts', path: '/' },
   { name: 'Editor Counts', path: '/editor-counts' },
+  { name: 'Subscriptions', path: '/subscriptions' },
   { name: 'Reviewer Dashboard', path: '/reviewer' }
 ]
 </script>
