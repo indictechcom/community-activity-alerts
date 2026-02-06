@@ -71,7 +71,7 @@
                   Notification Type
                 </label>
                 <cdx-radio
-                  v-model="newSubscription.notificationType"
+                  v-model="newSubscription.notification_type"
                   name="notification-type"
                   input-value="both"
                   :disabled="subscribing"
@@ -79,7 +79,7 @@
                   Both (Edit & Editor peaks)
                 </cdx-radio>
                 <cdx-radio
-                  v-model="newSubscription.notificationType"
+                  v-model="newSubscription.notification_type"
                   name="notification-type"
                   input-value="edit"
                   :disabled="subscribing"
@@ -87,7 +87,7 @@
                   Edit peaks only
                 </cdx-radio>
                 <cdx-radio
-                  v-model="newSubscription.notificationType"
+                  v-model="newSubscription.notification_type"
                   name="notification-type"
                   input-value="editor"
                   :disabled="subscribing"
@@ -223,7 +223,7 @@ const successMessage = ref('')
 
 const newSubscription = ref({
   project: '',
-  notificationType: 'both'
+  notification_type: 'both'
 })
 
 const fetchSubscriptions = async () => {
@@ -260,7 +260,7 @@ const addSubscription = async () => {
       `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions/subscribe`,
       {
         project: newSubscription.value.project,
-        notification_type: newSubscription.value.notificationType
+        notification_type: newSubscription.value.notification_type
       },
       { withCredentials: true }
     )
@@ -268,7 +268,7 @@ const addSubscription = async () => {
     if (response.data.success) {
       successMessage.value = `Successfully subscribed to ${newSubscription.value.project}`
       newSubscription.value.project = ''
-      newSubscription.value.notificationType = 'both'
+      newSubscription.value.notification_type = 'both'
       await fetchSubscriptions()
       
       setTimeout(() => {
