@@ -13,7 +13,9 @@ def create_subscription_blueprint(mwo_auth):
         if not user:
             return jsonify({"error": "Authentication required"}), 401
 
-        data = request.json
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Invalid JSON body"}), 400
         project = data.get('project')
         notification_type = data.get('notification_type', 'both')
 
@@ -56,7 +58,9 @@ def create_subscription_blueprint(mwo_auth):
         if not user:
             return jsonify({"error": "Authentication required"}), 401
 
-        data = request.json
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Invalid JSON body"}), 400
         project = data.get('project')
 
         if not project:
