@@ -75,8 +75,7 @@ class MediaWikiEmailService:
             logger.error(f"Error getting CSRF token: {e}")
             return None
 
-    def send_email(self, target_username, subject, text):
-            # Initial authentication and token retrieval if not present
+    def send_email(self, target_username, subject, text, retry=True):
             if not self.csrf_token:
                 if not self.login():
                     return {"success": False, "error": "Failed to authenticate"}
@@ -94,15 +93,13 @@ class MediaWikiEmailService:
                     "format": "json"
                 }
                 
-                # Request includes a 10-second timeout
                 response = self.session.post(self.api_url, data=params, timeout=10)
                 result = response.json()
 
-                # Handle token expiration: 'badtoken' error from MediaWiki API
-                if 'error' in result and result['error'].get('code') == 'badtoken':
-                    logger.warning("CSRF token expired. Attempting to refresh and retry...")
+                if 'error' in result and result['error'].get('code') == 'badtoken' and retry:
+                    logger.warning("CSRF token expired. Attempting to refresh and retry once...")
                     self.csrf_token = None  # Reset local token to trigger refresh
-                    return self.send_email(target_username, subject, text) # Retry once
+                    return self.send_email(target_username, subject, text, retry=False) 
                 
                 if 'emailuser' in result and result['emailuser'].get('result') == 'Success':
                     logger.info(f"Successfully sent email to {target_username}")
