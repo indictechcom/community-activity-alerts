@@ -6,9 +6,9 @@
       <div class="max-w-5xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Notification Subscriptions</h1>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Project & Language Watchlist</h1>
           <p class="text-gray-600">
-            Subscribe to projects to receive email notifications when activity peaks are detected.
+            Add projects or languages to your watchlist to receive email notifications when activity peaks are detected.
           </p>
         </div>
 
@@ -35,7 +35,7 @@
           </div>
           <h2 class="text-xl font-bold text-gray-900 mb-2">Authentication Required</h2>
           <p class="text-gray-600 mb-6">
-            Please log in to manage your notification subscriptions.
+            Please log in to manage your watchlist.
           </p>
           <cdx-button action="progressive" weight="primary" @click="auth.login">
             <template #icon>
@@ -47,9 +47,9 @@
 
         <!-- Subscriptions List -->
         <div v-else class="space-y-6">
-          <!-- Add New Subscription -->
+          <!-- Add Project to Watchlist -->
           <div class="codex-card p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">Add New Subscription</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Add Project to Watchlist</h2>
             
             <div class="space-y-4">
               <div>
@@ -57,9 +57,9 @@
                   Project URL
                 </label>
                 <cdx-text-input
-                  v-model="newSubscription.project"
+                  v-model="newWatch.project"
                   placeholder="e.g., hi.wikibooks.org"
-                  :disabled="subscribing"
+                  :disabled="watching"
                 />
                 <p class="text-xs text-gray-500 mt-1">
                   Enter the project URL (e.g., en.wikipedia.org, hi.wikibooks.org)
@@ -71,26 +71,26 @@
                   Notification Type
                 </label>
                 <cdx-radio
-                  v-model="newSubscription.notification_type"
+                  v-model="newWatch.notificationType"
                   name="notification-type"
                   input-value="both"
-                  :disabled="subscribing"
+                  :disabled="watching"
                 >
                   Both (Edit & Editor peaks)
                 </cdx-radio>
                 <cdx-radio
-                  v-model="newSubscription.notification_type"
+                  v-model="newWatch.notificationType"
                   name="notification-type"
                   input-value="edit"
-                  :disabled="subscribing"
+                  :disabled="watching"
                 >
                   Edit peaks only
                 </cdx-radio>
                 <cdx-radio
-                  v-model="newSubscription.notification_type"
+                  v-model="newWatch.notificationType"
                   name="notification-type"
                   input-value="editor"
-                  :disabled="subscribing"
+                  :disabled="watching"
                 >
                   Editor peaks only
                 </cdx-radio>
@@ -99,13 +99,13 @@
               <cdx-button
                 action="progressive"
                 weight="primary"
-                @click="addSubscription"
-                :disabled="!newSubscription.project || subscribing"
+                @click="addWatch"
+                :disabled="!newWatch.project || watching"
               >
                 <template #icon>
                   <cdx-icon :icon="cdxIconAdd" />
                 </template>
-                {{ subscribing ? 'Subscribing...' : 'Subscribe' }}
+                {{ watching ? 'Adding...' : 'Add to Watchlist' }}
               </cdx-button>
             </div>
           </div>
@@ -120,28 +120,91 @@
             {{ successMessage }}
           </cdx-message>
 
-          <!-- Current Subscriptions -->
+          <!-- Add Language to Watchlist -->
           <div class="codex-card p-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">Your Subscriptions</h2>
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Add Language to Watchlist</h2>
+            
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Language Code
+                </label>
+                <cdx-text-input
+                  v-model="newLanguageWatch.languageCode"
+                  placeholder="e.g., en, hi, fr"
+                  :disabled="watchingLanguage"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                  Enter a language code to add all projects in that language to your watchlist (e.g., en for English, hi for Hindi)
+                </p>
+              </div>
 
-            <div v-if="subscriptions.length === 0" class="text-center py-8 text-gray-500">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Notification Type
+                </label>
+                <cdx-radio
+                  v-model="newLanguageWatch.notificationType"
+                  name="language-notification-type"
+                  input-value="both"
+                  :disabled="watchingLanguage"
+                >
+                  Both (Edit & Editor peaks)
+                </cdx-radio>
+                <cdx-radio
+                  v-model="newLanguageWatch.notificationType"
+                  name="language-notification-type"
+                  input-value="edit"
+                  :disabled="watchingLanguage"
+                >
+                  Edit peaks only
+                </cdx-radio>
+                <cdx-radio
+                  v-model="newLanguageWatch.notificationType"
+                  name="language-notification-type"
+                  input-value="editor"
+                  :disabled="watchingLanguage"
+                >
+                  Editor peaks only
+                </cdx-radio>
+              </div>
+
+              <cdx-button
+                action="progressive"
+                weight="primary"
+                @click="addLanguageWatch"
+                :disabled="!newLanguageWatch.languageCode || watchingLanguage"
+              >
+                <template #icon>
+                  <cdx-icon :icon="cdxIconAdd" />
+                </template>
+                {{ watchingLanguage ? 'Adding...' : 'Add to Watchlist' }}
+              </cdx-button>
+            </div>
+          </div>
+
+          <!-- Project Watchlist -->
+          <div class="codex-card p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Your Project Watchlist</h2>
+
+            <div v-if="projectWatchlist.length === 0" class="text-center py-8 text-gray-500">
               <cdx-icon :icon="cdxIconBell" class="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>You don't have any subscriptions yet.</p>
-              <p class="text-sm mt-1">Subscribe to projects above to get started.</p>
+              <p>You don't have any projects in your watchlist yet.</p>
+              <p class="text-sm mt-1">Add projects above to get started.</p>
             </div>
 
             <div v-else class="space-y-3">
               <div
-                v-for="sub in subscriptions"
-                :key="sub.project"
+                v-for="item in projectWatchlist"
+                :key="item.project"
                 class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
                     <cdx-icon :icon="cdxIconArticle" class="text-gray-500" />
-                    <h3 class="font-semibold text-gray-900">{{ sub.project }}</h3>
+                    <h3 class="font-semibold text-gray-900">{{ item.project }}</h3>
                     <span
-                      v-if="!sub.is_active"
+                      v-if="!item.is_active"
                       class="px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded"
                     >
                       Inactive
@@ -149,25 +212,79 @@
                   </div>
                   <p class="text-sm text-gray-600">
                     Notification type: 
-                    <span class="font-medium">{{ formatNotificationType(sub.notification_type) }}</span>
+                    <span class="font-medium">{{ formatNotificationType(item.notification_type) }}</span>
                   </p>
                   <p class="text-xs text-gray-500 mt-1">
-                    Subscribed on {{ formatDate(sub.created_at) }}
+                    Added {{ formatDate(item.created_at) }}
                   </p>
                 </div>
 
                 <div class="flex items-center gap-2">
                   <cdx-button
-                    v-if="sub.is_active"
+                    v-if="item.is_active"
                     action="destructive"
                     weight="quiet"
-                    @click="unsubscribe(sub.project)"
-                    :disabled="unsubscribing === sub.project"
+                    @click="removeProject(item.project)"
+                    :disabled="removingProject === item.project"
                   >
                     <template #icon>
                       <cdx-icon :icon="cdxIconTrash" />
                     </template>
-                    {{ unsubscribing === sub.project ? 'Removing...' : 'Unsubscribe' }}
+                    {{ removingProject === item.project ? 'Removing...' : 'Remove' }}
+                  </cdx-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Language Watchlist -->
+          <div class="codex-card p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">Your Language Watchlist</h2>
+
+            <div v-if="languageWatchlist.length === 0" class="text-center py-8 text-gray-500">
+              <cdx-icon :icon="cdxIconBell" class="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p>You don't have any languages in your watchlist yet.</p>
+              <p class="text-sm mt-1">Add a language to receive notifications for all projects in that language.</p>
+            </div>
+
+            <div v-else class="space-y-3">
+              <div
+                v-for="item in languageWatchlist"
+                :key="item.language_code"
+                class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <cdx-icon :icon="cdxIconLanguage" class="text-gray-500" />
+                    <h3 class="font-semibold text-gray-900" style="text-transform: none;">{{ getLanguageName(item.language_code) }} (All Projects)</h3>
+                    <span
+                      v-if="!item.is_active"
+                      class="px-2 py-0.5 text-xs bg-gray-200 text-gray-600 rounded"
+                    >
+                      Inactive
+                    </span>
+                  </div>
+                  <p class="text-sm text-gray-600">
+                    Notification type: 
+                    <span class="font-medium">{{ formatNotificationType(item.notification_type) }}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Added {{ formatDate(item.created_at) }}
+                  </p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <cdx-button
+                    v-if="item.is_active"
+                    action="destructive"
+                    weight="quiet"
+                    @click="removeLanguage(item.language_code)"
+                    :disabled="removingLanguage === item.language_code"
+                  >
+                    <template #icon>
+                      <cdx-icon :icon="cdxIconTrash" />
+                    </template>
+                    {{ removingLanguage === item.language_code ? 'Removing...' : 'Remove' }}
                   </cdx-button>
                 </div>
               </div>
@@ -208,7 +325,8 @@ import {
   cdxIconBell,
   cdxIconArticle,
   cdxIconTrash,
-  cdxIconInfo
+  cdxIconInfo,
+  cdxIconLanguage
 } from '@wikimedia/codex-icons'
 import Navbar from '../components/Navbar.vue'
 
@@ -216,99 +334,255 @@ const auth = useAuthStore()
 
 const loading = ref(false)
 const error = ref(null)
-const subscriptions = ref([])
-const subscribing = ref(false)
-const unsubscribing = ref(null)
+const projectWatchlist = ref([])
+const languageWatchlist = ref([])
+const watching = ref(false)
+const watchingLanguage = ref(false)
+const removingProject = ref(null)
+const removingLanguage = ref(null)
 const successMessage = ref('')
 
-const newSubscription = ref({
+const newWatch = ref({
   project: '',
-  notification_type: 'both'
+  notificationType: 'both'
 })
 
-const fetchSubscriptions = async () => {
+const newLanguageWatch = ref({
+  languageCode: '',
+  notificationType: 'both'
+})
+
+// Language code to name mapping
+const languageNames = {
+  'en': 'English',
+  'hi': 'Hindi',
+  'es': 'Spanish',
+  'fr': 'French',
+  'de': 'German',
+  'it': 'Italian',
+  'pt': 'Portuguese',
+  'ru': 'Russian',
+  'ja': 'Japanese',
+  'zh': 'Chinese',
+  'ar': 'Arabic',
+  'bn': 'Bengali',
+  'pa': 'Punjabi',
+  'te': 'Telugu',
+  'mr': 'Marathi',
+  'ta': 'Tamil',
+  'ur': 'Urdu',
+  'gu': 'Gujarati',
+  'kn': 'Kannada',
+  'ml': 'Malayalam',
+  'or': 'Odia',
+  'as': 'Assamese',
+  'ne': 'Nepali',
+  'si': 'Sinhala',
+  'sa': 'Sanskrit',
+  'ko': 'Korean',
+  'vi': 'Vietnamese',
+  'th': 'Thai',
+  'id': 'Indonesian',
+  'ms': 'Malay',
+  'nl': 'Dutch',
+  'pl': 'Polish',
+  'tr': 'Turkish',
+  'uk': 'Ukrainian',
+  'sv': 'Swedish',
+  'no': 'Norwegian',
+  'da': 'Danish',
+  'fi': 'Finnish',
+  'cs': 'Czech',
+  'hu': 'Hungarian',
+  'ro': 'Romanian',
+  'el': 'Greek',
+  'he': 'Hebrew',
+  'fa': 'Persian',
+  'ca': 'Catalan',
+  'sr': 'Serbian',
+  'hr': 'Croatian',
+  'bg': 'Bulgarian',
+  'sk': 'Slovak',
+  'lt': 'Lithuanian',
+  'lv': 'Latvian',
+  'et': 'Estonian',
+  'sl': 'Slovenian',
+  'mk': 'Macedonian',
+  'sq': 'Albanian',
+  'az': 'Azerbaijani',
+  'hy': 'Armenian',
+  'ka': 'Georgian',
+  'eu': 'Basque',
+  'gl': 'Galician',
+  'cy': 'Welsh',
+  'ga': 'Irish',
+  'is': 'Icelandic',
+  'af': 'Afrikaans',
+  'sw': 'Swahili',
+  'zu': 'Zulu',
+  'xh': 'Xhosa'
+}
+
+const getLanguageName = (code) => {
+  const normalizedCode = code.toLowerCase()
+  return languageNames[normalizedCode] || code.charAt(0).toUpperCase() + code.slice(1).toLowerCase()
+}
+
+const fetchWatchlist = async () => {
   if (!auth.isAuthenticated) return
 
   loading.value = true
   error.value = null
 
   try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions/my-subscriptions`,
-      { withCredentials: true }
-    )
+    const [projectResponse, languageResponse] = await Promise.all([
+      axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/project-watchlist`,
+        { withCredentials: true }
+      ),
+      axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/language-watchlist`,
+        { withCredentials: true }
+      )
+    ])
 
-    if (response.data.success) {
-      subscriptions.value = response.data.subscriptions
+    if (projectResponse.data.success) {
+      projectWatchlist.value = projectResponse.data.watchlist
+    }
+    if (languageResponse.data.success) {
+      languageWatchlist.value = languageResponse.data.language_watchlist
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to load subscriptions'
-    console.error('Error fetching subscriptions:', err)
+    error.value = err.response?.data?.error || 'Failed to load watchlist'
+    console.error('Error fetching watchlist:', err)
   } finally {
     loading.value = false
   }
 }
 
-const addSubscription = async () => {
-  if (!newSubscription.value.project) return
+const addWatch = async () => {
+  if (!newWatch.value.project) return
 
-  subscribing.value = true
+  watching.value = true
   error.value = null
 
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions/subscribe`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/add-project`,
       {
-        project: newSubscription.value.project,
-        notification_type: newSubscription.value.notification_type
+        project: newWatch.value.project,
+        notification_type: newWatch.value.notificationType
       },
       { withCredentials: true }
     )
 
     if (response.data.success) {
-      successMessage.value = `Successfully subscribed to ${newSubscription.value.project}`
-      newSubscription.value.project = ''
-      newSubscription.value.notification_type = 'both'
-      await fetchSubscriptions()
+      successMessage.value = `Successfully added ${newWatch.value.project} to watchlist`
+      newWatch.value.project = ''
+      newWatch.value.notificationType = 'both'
+      await fetchWatchlist()
       
       setTimeout(() => {
         successMessage.value = ''
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to add subscription'
-    console.error('Error adding subscription:', err)
+    error.value = err.response?.data?.error || 'Failed to add project to watchlist'
+    console.error('Error adding project to watchlist:', err)
   } finally {
-    subscribing.value = false
+    watching.value = false
   }
 }
 
-const unsubscribe = async (project) => {
-  if (!confirm(`Are you sure you want to unsubscribe from ${project}?`)) return
+const addLanguageWatch = async () => {
+  if (!newLanguageWatch.value.languageCode) return
 
-  unsubscribing.value = project
+  watchingLanguage.value = true
   error.value = null
 
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions/unsubscribe`,
+      `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/add-language`,
+      {
+        language_code: newLanguageWatch.value.languageCode.toLowerCase(),
+        notification_type: newLanguageWatch.value.notificationType
+      },
+      { withCredentials: true }
+    )
+
+    if (response.data.success) {
+      successMessage.value = `Successfully added ${getLanguageName(newLanguageWatch.value.languageCode)} to language watchlist`
+      newLanguageWatch.value.languageCode = ''
+      newLanguageWatch.value.notificationType = 'both'
+      await fetchWatchlist()
+      
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 5000)
+    }
+  } catch (err) {
+    error.value = err.response?.data?.error || 'Failed to add language to watchlist'
+    console.error('Error adding language to watchlist:', err)
+  } finally {
+    watchingLanguage.value = false
+  }
+}
+
+const removeProject = async (project) => {
+  if (!confirm(`Are you sure you want to remove ${project} from your watchlist?`)) return
+
+  removingProject.value = project
+  error.value = null
+
+  try {
+    const response = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/remove-project`,
       { project },
       { withCredentials: true }
     )
 
     if (response.data.success) {
-      successMessage.value = `Successfully unsubscribed from ${project}`
-      await fetchSubscriptions()
+      successMessage.value = `Successfully removed ${project} from watchlist`
+      await fetchWatchlist()
       
       setTimeout(() => {
         successMessage.value = ''
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to unsubscribe'
-    console.error('Error unsubscribing:', err)
+    error.value = err.response?.data?.error || 'Failed to remove project from watchlist'
+    console.error('Error removing project from watchlist:', err)
   } finally {
-    unsubscribing.value = null
+    removingProject.value = null
+  }
+}
+
+const removeLanguage = async (languageCode) => {
+  if (!confirm(`Are you sure you want to remove ${getLanguageName(languageCode)} from your language watchlist?`)) return
+
+  removingLanguage.value = languageCode
+  error.value = null
+
+  try {
+    const response = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/remove-language`,
+      { language_code: languageCode },
+      { withCredentials: true }
+    )
+
+    if (response.data.success) {
+      successMessage.value = `Successfully removed ${getLanguageName(languageCode)} from language watchlist`
+      await fetchWatchlist()
+      
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 5000)
+    }
+  } catch (err) {
+    error.value = err.response?.data?.error || 'Failed to remove language from watchlist'
+    console.error('Error removing language from watchlist:', err)
+  } finally {
+    removingLanguage.value = null
   }
 }
 
@@ -334,7 +608,7 @@ const formatDate = (dateString) => {
 onMounted(async () => {
   await auth.fetchUser()
   if (auth.isAuthenticated) {
-    await fetchSubscriptions()
+    await fetchWatchlist()
   }
 })
 </script>

@@ -54,8 +54,8 @@ annotation_bp = create_annotation_blueprint(mwo_auth)
 app.register_blueprint(annotation_bp, url_prefix='/api/annotations')
 
 from subscription.routes import create_subscription_blueprint
-subscription_bp = create_subscription_blueprint(mwo_auth)
-app.register_blueprint(subscription_bp, url_prefix='/api/subscriptions')
+watchlist_bp = create_subscription_blueprint(mwo_auth)
+app.register_blueprint(watchlist_bp, url_prefix='/api/watchlist')
 
 
 @app.route("/", defaults={"path": ""}, endpoint="index")

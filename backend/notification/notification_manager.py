@@ -10,20 +10,39 @@ class NotificationManager:
         self.email_service = MediaWikiEmailService()
     
     def get_subscribed_users_for_peak(self, project, peak_type):
+        """Get users watching this project either directly or via language watch"""
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
+            # Extract language code from project (e.g., 'en' from 'en.wikipedia.org')
+            language_code = project.split('.')[0] if '.' in project else None
+            
+            # Get users watching this specific project
             cursor.execute("""
                 SELECT DISTINCT username
-                FROM user_subscriptions
+                FROM user_project_watchlist
                 WHERE project = %s 
                 AND is_active = TRUE
                 AND (notification_type = %s OR notification_type = 'both')
             """, (project, peak_type))
             
-            users = [row[0] for row in cursor.fetchall()]
-            return users
+            users = set(row[0] for row in cursor.fetchall())
+            
+            # Get users watching this language (if language code exists)
+            if language_code:
+                cursor.execute("""
+                    SELECT DISTINCT username
+                    FROM user_language_watchlist
+                    WHERE language_code = %s 
+                    AND is_active = TRUE
+                    AND (notification_type = %s OR notification_type = 'both')
+                """, (language_code, peak_type))
+                
+                language_users = set(row[0] for row in cursor.fetchall())
+                users.update(language_users)
+            
+            return list(users)
             
         except Exception as e:
             logger.error(f"Error fetching subscribed users for {project}: {e}")
