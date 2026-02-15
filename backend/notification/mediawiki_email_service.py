@@ -17,6 +17,11 @@ class MediaWikiEmailService:
             'User-Agent': 'Community Activity Alerts/1.0 (https://community-activity-alerts.toolforge.org; contact@toolforge.org)'
         })
         self.csrf_token = None
+        self.session.timeout = 10  # Set a timeout for all requests to prevent hanging
+
+        if not self.bot_username or not self.bot_password:
+            logger.error("Bot credentials are not set in environment variables")
+            raise ValueError("Bot credentials are required for MediaWikiEmailService")
         
     def login(self):
         try:
@@ -69,40 +74,45 @@ class MediaWikiEmailService:
         except Exception as e:
             logger.error(f"Error getting CSRF token: {e}")
             return None
-    
-    def send_email(self, target_username, subject, text):
-        if not self.csrf_token:
-            if not self.login():
-                return {"success": False, "error": "Failed to authenticate"}
-            
-            if not self.get_csrf_token():
-                return {"success": False, "error": "Failed to get CSRF token"}
-        
-        try:
-            params = {
-                "action": "emailuser",
-                "target": target_username,
-                "subject": subject,
-                "text": text,
-                "token": self.csrf_token,
-                "format": "json"
-            }
-            
-            response = self.session.post(self.api_url, data=params)
-            result = response.json()
-            
-            if 'emailuser' in result and result['emailuser'].get('result') == 'Success':
-                logger.info(f"Successfully sent email to {target_username}")
-                return {"success": True, "message": "Email sent successfully"}
-            else:
-                error_msg = result.get('error', {}).get('info', 'Unknown error')
-                logger.error(f"Failed to send email to {target_username}: {error_msg}")
-                return {"success": False, "error": error_msg}
+
+    def send_email(self, target_username, subject, text, retry=True):
+            if not self.csrf_token:
+                if not self.login():
+                    return {"success": False, "error": "Failed to authenticate"}
                 
-        except Exception as e:
-            logger.error(f"Error sending email to {target_username}: {e}")
-            return {"success": False, "error": str(e)}
-    
+                if not self.get_csrf_token():
+                    return {"success": False, "error": "Failed to get CSRF token"}
+            
+            try:
+                params = {
+                    "action": "emailuser",
+                    "target": target_username,
+                    "subject": subject,
+                    "text": text,
+                    "token": self.csrf_token,
+                    "format": "json"
+                }
+                
+                response = self.session.post(self.api_url, data=params, timeout=10)
+                result = response.json()
+
+                if 'error' in result and result['error'].get('code') == 'badtoken' and retry:
+                    logger.warning("CSRF token expired. Attempting to refresh and retry once...")
+                    self.csrf_token = None  # Reset local token to trigger refresh
+                    return self.send_email(target_username, subject, text, retry=False) 
+                
+                if 'emailuser' in result and result['emailuser'].get('result') == 'Success':
+                    logger.info(f"Successfully sent email to {target_username}")
+                    return {"success": True, "message": "Email sent successfully"}
+                else:
+                    error_msg = result.get('error', {}).get('info', 'Unknown error')
+                    logger.error(f"Failed to send email to {target_username}: {error_msg}")
+                    return {"success": False, "error": error_msg}
+                    
+            except Exception as e:
+                logger.error(f"Error sending email to {target_username}: {e}")
+                return {"success": False, "error": str(e)}
+
     def send_peak_notification(self, username, project, peak_data):
         peak_type = peak_data.get('peak_type', 'activity')
         timestamp = peak_data.get('timestamp', 'Unknown')

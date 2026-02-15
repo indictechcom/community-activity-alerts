@@ -13,8 +13,9 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
     INDEX idx_username (username),
     INDEX idx_project (project),
     INDEX idx_is_active (is_active)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Notification Logs to track delivery and prevent duplicates
 CREATE TABLE IF NOT EXISTS notification_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
@@ -24,9 +25,9 @@ CREATE TABLE IF NOT EXISTS notification_logs (
     notification_sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notification_status ENUM('sent', 'failed', 'pending') NOT NULL DEFAULT 'pending',
     error_message TEXT DEFAULT NULL,
+    UNIQUE KEY unique_notification_event (username, project, peak_timestamp, peak_type),
     INDEX idx_username (username),
     INDEX idx_project (project),
-    INDEX idx_notification_sent_at (notification_sent_at),
     INDEX idx_notification_status (notification_status),
-    INDEX idx_peak_lookup (project, peak_timestamp, peak_type)
-);
+    INDEX idx_notification_lookup (project, peak_timestamp, peak_type, username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

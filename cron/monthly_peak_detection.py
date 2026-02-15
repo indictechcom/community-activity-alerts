@@ -29,8 +29,8 @@ def main():
     try:
         notification_manager = NotificationManager()
         
-        # Check only the last 1 day since this runs immediately after peak detection
-        result = notification_manager.process_notifications(days_back=1)
+        # Check for detected peaks in the last month and send notifications
+        result = notification_manager.process_notifications(days_back=31)
         
         logger.info("Job completed successfully")
         logger.info(f"Total peaks processed: {result['total_peaks']}")

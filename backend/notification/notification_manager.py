@@ -1,7 +1,7 @@
 import logging
-from datetime import datetime, timedelta
-from config import get_db_connection
-from notification.mediawiki_email_service import MediaWikiEmailService
+from datetime import datetime, timedelta, timezone
+from backend.config import get_db_connection
+from backend.notification.mediawiki_email_service import MediaWikiEmailService
 
 logger = logging.getLogger(__name__)
 
@@ -71,88 +71,39 @@ class NotificationManager:
             cursor.close()
             conn.close()
     
-    def check_if_already_notified(self, project, peak_timestamp, peak_type):
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("""
-                SELECT COUNT(*) FROM notification_logs
-                WHERE project = %s 
-                AND peak_timestamp = %s 
-                AND peak_type = %s
-                AND notification_status = 'sent'
-            """, (project, peak_timestamp, peak_type))
+    def get_already_notified_set(self, days_back=31):
+            """Fetches all successfully sent notifications in the last X days to avoid redundant DB calls"""
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            notified_set = set()
             
-            count = cursor.fetchone()[0]
-            return count > 0
-            
-        except Exception as e:
-            logger.error(f"Error checking notification status: {e}")
-            return False
-        finally:
-            cursor.close()
-            conn.close()
-    
-    def send_notifications_for_peak(self, peak):
-        project = peak['project']
-        peak_type = peak['peak_type']
-        
-        if self.check_if_already_notified(project, peak['timestamp'], peak_type):
-            logger.info(f"Peak already notified: {project} at {peak['timestamp']}")
-            return {"sent": 0, "failed": 0, "skipped": True}
-        
-        subscribed_users = self.get_subscribed_users_for_peak(project, peak_type)
-        
-        if not subscribed_users:
-            logger.info(f"No subscribed users for {project} ({peak_type} peaks)")
-            return {"sent": 0, "failed": 0, "skipped": False}
-        
-        logger.info(f"Sending notifications to {len(subscribed_users)} users for {project}")
-        
-        sent_count = 0
-        failed_count = 0
-        
-        for username in subscribed_users:
             try:
-                result = self.email_service.send_peak_notification(
-                    username=username,
-                    project=project,
-                    peak_data={
-                        'peak_type': peak_type,
-                        'timestamp': peak['timestamp'].strftime('%Y-%m-%d') if hasattr(peak['timestamp'], 'strftime') else str(peak['timestamp']),
-                        'value': peak['value'],
-                        'percentage_difference': peak['percentage_difference']
-                    }
-                )
+                cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
+                cursor.execute("""
+                    SELECT project, peak_timestamp, peak_type, username
+                    FROM notification_logs
+                    WHERE notification_status = 'sent'
+                    AND peak_timestamp >= %s
+                """, (cutoff_date,))
                 
-                if result.get('success'):
-                    self.log_notification(
-                        username, project, peak_type, peak['timestamp'], 'sent'
-                    )
-                    sent_count += 1
-                else:
-                    error_msg = result.get('error', 'Unknown error')
-                    self.log_notification(
-                        username, project, peak_type, peak['timestamp'], 'failed', error_msg
-                    )
-                    failed_count += 1
+                for row in cursor.fetchall():
+                    # Store as a tuple key: (project, timestamp, type, username)
+                    notified_set.add((row[0], row[1], row[2], row[3]))
                     
+                return notified_set
             except Exception as e:
-                logger.error(f"Error sending notification to {username}: {e}")
-                self.log_notification(
-                    username, project, peak_type, peak['timestamp'], 'failed', str(e)
-                )
-                failed_count += 1
-        
-        return {"sent": sent_count, "failed": failed_count, "skipped": False}
-    
+                logger.error(f"Error fetching notified set: {e}")
+                return notified_set
+            finally:
+                cursor.close()
+                conn.close()
+
     def get_new_peaks_from_alerts(self, days_back=31):
         conn = get_db_connection()
         cursor = conn.cursor()
         
         try:
-            cutoff_date = datetime.now() - timedelta(days=days_back)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_back)
             
             cursor.execute("""
                 SELECT project, timestamp, edit_count as value, 
@@ -219,20 +170,26 @@ class NotificationManager:
                 "total_skipped": 0
             }
         
+        # Optimization: Fetch all 'sent' logs once
+        already_notified = self.get_already_notified_set(days_back)
+        
         logger.info(f"Processing {len(peaks)} peaks")
         
         # Group peaks by user
         user_peaks = {}
+        total_skipped = 0
         for peak in peaks:
-            # Skip if already notified
-            if self.check_if_already_notified(peak['project'], peak['timestamp'], peak['peak_type']):
-                logger.info(f"Peak already notified: {peak['project']} at {peak['timestamp']}")
-                continue
-            
-            # Get subscribed users for this peak
             subscribed_users = self.get_subscribed_users_for_peak(peak['project'], peak['peak_type'])
             
+            # Instead of checking each notification individually, we check if the user has already been notified for this peak using the in-memory set
             for username in subscribed_users:
+                # Check against the in-memory set instead of the database
+                notification_key = (peak['project'], peak['timestamp'], peak['peak_type'], username)
+                
+                if notification_key in already_notified:
+                    total_skipped += 1
+                    continue
+                
                 if username not in user_peaks:
                     user_peaks[username] = []
                 user_peaks[username].append(peak)
@@ -244,7 +201,7 @@ class NotificationManager:
                 "total_peaks": len(peaks),
                 "total_sent": 0,
                 "total_failed": 0,
-                "total_skipped": len(peaks)
+                "total_skipped": total_skipped
             }
         
         # Send batched notifications to each user
@@ -264,8 +221,11 @@ class NotificationManager:
                     # Log each peak notification as sent
                     for peak in user_peak_list:
                         self.log_notification(
-                            username, peak['project'], peak['peak_type'], 
-                            peak['timestamp'], 'sent'
+                            username,
+                            peak['project'],
+                            peak['peak_type'], 
+                            peak['timestamp'],
+                            'sent'
                         )
                     total_sent += 1
                     logger.info(f"Successfully sent notification to {username}")
@@ -296,5 +256,5 @@ class NotificationManager:
             "total_peaks": len(peaks),
             "total_sent": total_sent,
             "total_failed": total_failed,
-            "total_skipped": 0
+            "total_skipped": total_skipped
         }
