@@ -301,6 +301,7 @@ def get_activity_data():
         return jsonify({"error": str(e)}), 500
 
 # --- Editor Counts API Endpoints ---
+# --- Editor Counts API Endpoints ---
 @app.route("/api/editor-activity-data")
 def get_editor_activity_data():
     language = request.args.get("language")
@@ -312,106 +313,69 @@ def get_editor_activity_data():
         return jsonify({"error": "Missing required parameters"}), 400
 
     project = project_group
-    start = datetime.strptime(datestart, "%b %Y")
-    end = datetime.strptime(dateend, "%b %Y")
     
-    start = start.replace(day=1, hour=0, minute=0, second=0)
-    last_day = calendar.monthrange(end.year, end.month)[1]
-    end = end.replace(day=last_day, hour=23, minute=59, second=59)
+    # Standardize datetime parsing
+    start = datetime.strptime(datestart, "%b %Y").replace(day=1, hour=0, minute=0, second=0)
+    end_dt = datetime.strptime(dateend, "%b %Y")
+    last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
+    end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
 
     try:
-        # Fetch editor count data from DB
-        # Handle both formats: with and without .org suffix
         conn = get_db_connection()
+        # Handle both formats: with and without .org suffix for fallback
         project_without_org = project.replace('.org', '') if project.endswith('.org') else project
-        query = """
+        
+        # 1. Fetch Chart Data (Raw Counts)
+        query_editors = """
             SELECT timestamp, editor_count AS editors
             FROM editor_counts
             WHERE (project = %s OR project = %s) AND timestamp BETWEEN %s AND %s
             ORDER BY timestamp ASC
         """
-        df = pd.read_sql(query, conn, params=(project, project_without_org, start, end))
+        df_editors = pd.read_sql(query_editors, conn, params=(project, project_without_org, start, end))
+        
+        # 2. Fetch Pre-computed Peaks from Editor Alerts Table
+        query_peaks = """
+            SELECT timestamp, editor_count AS editors, rolling_mean, threshold, percentage_difference, label
+            FROM editor_alerts
+            WHERE (project = %s OR project = %s) AND timestamp BETWEEN %s AND %s
+            ORDER BY timestamp ASC
+        """
+        df_peaks = pd.read_sql(query_peaks, conn, params=(project, project_without_org, start, end))
+        
         conn.close()
 
-        if df.empty:
+        if df_editors.empty:
             return jsonify({"peaks": [], "chartData": {}})
-        
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        
-        # Use same peak detection logic but for editors
-        def find_editor_peaks_rolling_3_years(df, threshold_percentage=0.30):
-            df = df.sort_values("timestamp").reset_index(drop=True)
-            peaks = []
 
-            for i in range(len(df)):
-                t_i = df.at[i, "timestamp"]
-                editors_i = df.at[i, "editors"]
+        # Format Chart Data
+        chart_timestamps = pd.to_datetime(df_editors["timestamp"]).dt.strftime('%b %Y').tolist()
+        chart_editors = df_editors["editors"].tolist()
 
-                window = df[
-                    (df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] <= t_i)
-                ]
-                if window.empty:
-                    continue
-
-                rolling_mean = window["editors"].mean()
-                threshold = rolling_mean * (1 + threshold_percentage)
-                pct_diff = ((editors_i - rolling_mean) / rolling_mean) * 100
-
-                if editors_i >= threshold:
-                    peaks.append(
-                        {
-                            "timestamp": t_i,
-                            "editors": editors_i,
-                            "rolling_mean": rolling_mean,
-                            "threshold": threshold,
-                            "percentage_difference": pct_diff,
-                        }
-                    )
-
-            return peaks
-        
-        peaks_raw = find_editor_peaks_rolling_3_years(df, threshold_percentage=0.30)
-        
-        # Format peaks for display
+        # Format Peaks Data
         peaks = []
-        for peak in peaks_raw:
-            peaks.append(
-                {
-                    "timestamp": peak["timestamp"].strftime("%Y-%m-%d"),
-                    "editors": int(peak["editors"]),
-                    "rolling_mean": round(float(peak["rolling_mean"]), 2),
-                    "threshold": round(float(peak["threshold"]), 2),
-                    "percentage_difference": round(float(peak["percentage_difference"]), 2),
-                }
-            )
-        
-        # Fetch labels for editor peaks
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        peak_labels = {}
+        peak_timestamps_chart = []
+        peak_values_chart = []
+        peak_labels_chart = []
 
-        for peak in peaks:
-            try:
-                cursor.execute(
-                    "SELECT label FROM editor_alerts WHERE project = %s AND timestamp = %s",
-                    (project, peak["timestamp"]),
-                )
-                result = cursor.fetchone()
-                peak_labels[peak["timestamp"]] = (
-                    result[0] if result and result[0] else ""
-                )
-            except:
-                peak_labels[peak["timestamp"]] = ""
+        if not df_peaks.empty:
+            # Convert timestamp to string for JSON serialization
+            df_peaks["timestamp_str"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%Y-%m-%d')
+            df_peaks["chart_x"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%b %Y')
+            
+            for _, row in df_peaks.iterrows():
+                peaks.append({
+                    "timestamp": row["timestamp_str"],
+                    "editors": int(row["editors"]),
+                    "rolling_mean": round(float(row["rolling_mean"]), 2),
+                    "threshold": round(float(row["threshold"]), 2),
+                    "percentage_difference": round(float(row["percentage_difference"]), 2)
+                })
+                # Arrays for Plotly Trace
+                peak_timestamps_chart.append(row["chart_x"])
+                peak_values_chart.append(row["editors"])
+                peak_labels_chart.append(row["label"] if row["label"] else "")
 
-        conn.close()
-
-        # Format data for JSON response
-        chart_timestamps = df["timestamp"].dt.strftime('%b %Y').tolist()
-        chart_editors = df["editors"].tolist()
-
-        peak_timestamps = [datetime.strptime(p['timestamp'], '%Y-%m-%d').strftime('%b %Y') for p in peaks]
-        peak_values = [p['editors'] for p in peaks]
-        
         response_data = {
             "peaks": peaks,
             "chartData": {
@@ -421,10 +385,10 @@ def get_editor_activity_data():
                     "type": 'scatter', 'mode': 'lines+markers', 'name': 'Editors'
                 },
                 "peaksTrace": {
-                    "x": peak_timestamps,
-                    "y": peak_values,
+                    "x": peak_timestamps_chart,
+                    "y": peak_values_chart,
                     "mode": 'markers+text', 'name': 'Peaks',
-                    "text": [peak_labels.get(p['timestamp'], "") for p in peaks]
+                    "text": peak_labels_chart
                 }
             }
         }
@@ -433,8 +397,6 @@ def get_editor_activity_data():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 # --- Editor Peak Label Management ---
 @app.route("/api/update_editor_peak_label", methods=["POST"])
 def update_editor_peak_label():
