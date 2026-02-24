@@ -1,6 +1,12 @@
 from flask import Blueprint, request, jsonify
 from config import get_db_connection
 import logging
+from subscription.sitematrix_validator import (
+    is_valid_project,
+    is_valid_language,
+    normalize_project,
+    normalize_language_code
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +31,12 @@ def create_subscription_blueprint(mwo_auth):
         if notification_type not in ['edit', 'editor', 'both']:
             return jsonify({"error": "Invalid notification type"}), 400
 
+        normalized_project = normalize_project(project)
+        if not is_valid_project(normalized_project):
+            return jsonify({
+                "error": f"Invalid project: '{project}' is not a valid Wikimedia project. Please enter a valid project URL (e.g., en.wikipedia.org, hi.wikibooks.org)"
+            }), 400
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -36,7 +48,7 @@ def create_subscription_blueprint(mwo_auth):
                     notification_type = VALUES(notification_type),
                     is_active = TRUE,
                     updated_at = CURRENT_TIMESTAMP
-            """, (user, project, notification_type))
+            """, (user, normalized_project, notification_type))
             
             conn.commit()
             return jsonify({
@@ -236,6 +248,12 @@ def create_subscription_blueprint(mwo_auth):
         if notification_type not in ['edit', 'editor', 'both']:
             return jsonify({"error": "Invalid notification type"}), 400
 
+        normalized_language = normalize_language_code(language_code)
+        if not is_valid_language(normalized_language):
+            return jsonify({
+                "error": f"Invalid language code: '{language_code}' is not a valid Wikimedia language. Please enter a valid language code (e.g., en, hi, fr)"
+            }), 400
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -247,7 +265,7 @@ def create_subscription_blueprint(mwo_auth):
                     notification_type = VALUES(notification_type),
                     is_active = TRUE,
                     updated_at = CURRENT_TIMESTAMP
-            """, (user, language_code, notification_type))
+            """, (user, normalized_language, notification_type))
             
             conn.commit()
             return jsonify({

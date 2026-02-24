@@ -107,6 +107,17 @@
                 </template>
                 {{ watching ? 'Adding...' : 'Add to Watchlist' }}
               </cdx-button>
+
+              <!-- Project Error Message -->
+              <cdx-message
+                v-if="projectError"
+                type="error"
+                :fade-in="true"
+                @user-dismissed="projectError = null"
+                class="mt-4"
+              >
+                {{ projectError }}
+              </cdx-message>
             </div>
           </div>
 
@@ -180,6 +191,17 @@
                 </template>
                 {{ watchingLanguage ? 'Adding...' : 'Add to Watchlist' }}
               </cdx-button>
+
+              <!-- Language Error Message -->
+              <cdx-message
+                v-if="languageError"
+                type="error"
+                :fade-in="true"
+                @user-dismissed="languageError = null"
+                class="mt-4"
+              >
+                {{ languageError }}
+              </cdx-message>
             </div>
           </div>
 
@@ -334,6 +356,8 @@ const auth = useAuthStore()
 
 const loading = ref(false)
 const error = ref(null)
+const projectError = ref(null)
+const languageError = ref(null)
 const projectWatchlist = ref([])
 const languageWatchlist = ref([])
 const watching = ref(false)
@@ -464,20 +488,27 @@ const addWatch = async () => {
   if (!newWatch.value.project) return
 
   watching.value = true
-  error.value = null
+  projectError.value = null
+
+  // Normalize project input: strip protocol, whitespace, trailing slashes
+  const normalizedProject = newWatch.value.project
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
 
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/add-project`,
       {
-        project: newWatch.value.project,
+        project: normalizedProject,
         notification_type: newWatch.value.notificationType
       },
       { withCredentials: true }
     )
 
     if (response.data.success) {
-      successMessage.value = `Successfully added ${newWatch.value.project} to watchlist`
+      successMessage.value = `Successfully added ${normalizedProject} to watchlist`
       newWatch.value.project = ''
       newWatch.value.notificationType = 'both'
       await fetchWatchlist()
@@ -487,7 +518,7 @@ const addWatch = async () => {
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to add project to watchlist'
+    projectError.value = err.response?.data?.error || 'Failed to add project to watchlist'
     console.error('Error adding project to watchlist:', err)
   } finally {
     watching.value = false
@@ -498,20 +529,23 @@ const addLanguageWatch = async () => {
   if (!newLanguageWatch.value.languageCode) return
 
   watchingLanguage.value = true
-  error.value = null
+  languageError.value = null
+
+  // Normalize language code: strip whitespace and lowercase
+  const normalizedLanguage = newLanguageWatch.value.languageCode.trim().toLowerCase()
 
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_BACKEND_URL}/api/watchlist/add-language`,
       {
-        language_code: newLanguageWatch.value.languageCode.toLowerCase(),
+        language_code: normalizedLanguage,
         notification_type: newLanguageWatch.value.notificationType
       },
       { withCredentials: true }
     )
 
     if (response.data.success) {
-      successMessage.value = `Successfully added ${getLanguageName(newLanguageWatch.value.languageCode)} to language watchlist`
+      successMessage.value = `Successfully added ${getLanguageName(normalizedLanguage)} to language watchlist`
       newLanguageWatch.value.languageCode = ''
       newLanguageWatch.value.notificationType = 'both'
       await fetchWatchlist()
@@ -521,7 +555,7 @@ const addLanguageWatch = async () => {
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to add language to watchlist'
+    languageError.value = err.response?.data?.error || 'Failed to add language to watchlist'
     console.error('Error adding language to watchlist:', err)
   } finally {
     watchingLanguage.value = false
@@ -532,7 +566,7 @@ const removeProject = async (project) => {
   if (!confirm(`Are you sure you want to remove ${project} from your watchlist?`)) return
 
   removingProject.value = project
-  error.value = null
+  projectError.value = null
 
   try {
     const response = await axios.post(
@@ -550,7 +584,7 @@ const removeProject = async (project) => {
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to remove project from watchlist'
+    projectError.value = err.response?.data?.error || 'Failed to remove project from watchlist'
     console.error('Error removing project from watchlist:', err)
   } finally {
     removingProject.value = null
@@ -561,7 +595,7 @@ const removeLanguage = async (languageCode) => {
   if (!confirm(`Are you sure you want to remove ${getLanguageName(languageCode)} from your language watchlist?`)) return
 
   removingLanguage.value = languageCode
-  error.value = null
+  languageError.value = null
 
   try {
     const response = await axios.post(
@@ -579,7 +613,7 @@ const removeLanguage = async (languageCode) => {
       }, 5000)
     }
   } catch (err) {
-    error.value = err.response?.data?.error || 'Failed to remove language from watchlist'
+    languageError.value = err.response?.data?.error || 'Failed to remove language from watchlist'
     console.error('Error removing language from watchlist:', err)
   } finally {
     removingLanguage.value = null
