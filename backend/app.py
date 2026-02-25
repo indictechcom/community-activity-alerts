@@ -53,8 +53,8 @@ from annotation.routes import create_annotation_blueprint
 annotation_bp = create_annotation_blueprint(mwo_auth)
 app.register_blueprint(annotation_bp, url_prefix='/api/annotations')
 
-from subscription.routes import create_subscription_blueprint
-watchlist_bp = create_subscription_blueprint(mwo_auth)
+from subscription.routes import create_watchlist_blueprint
+watchlist_bp = create_watchlist_blueprint(mwo_auth)
 app.register_blueprint(watchlist_bp, url_prefix='/api/watchlist')
 
 

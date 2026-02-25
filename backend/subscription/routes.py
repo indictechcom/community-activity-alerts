@@ -10,7 +10,7 @@ from subscription.sitematrix_validator import (
 
 logger = logging.getLogger(__name__)
 
-def create_subscription_blueprint(mwo_auth):
+def create_watchlist_blueprint(mwo_auth):
     watchlist_bp = Blueprint('watchlist', __name__)
 
     @watchlist_bp.route('/add-project', methods=['POST'])
