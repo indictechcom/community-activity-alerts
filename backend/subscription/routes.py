@@ -78,6 +78,8 @@ def create_subscription_blueprint(mwo_auth):
         if not project:
             return jsonify({"error": "Project is required"}), 400
 
+        normalized_project = normalize_project(project)
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -86,7 +88,7 @@ def create_subscription_blueprint(mwo_auth):
                 UPDATE user_project_watchlist 
                 SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
                 WHERE username = %s AND project = %s
-            """, (user, project))
+            """, (user, normalized_project))
             
             conn.commit()
             
@@ -155,6 +157,8 @@ def create_subscription_blueprint(mwo_auth):
         if not project:
             return jsonify({"error": "Project parameter is required"}), 400
 
+        normalized_project = normalize_project(project)
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -163,7 +167,7 @@ def create_subscription_blueprint(mwo_auth):
                 SELECT notification_type, is_active
                 FROM user_project_watchlist
                 WHERE username = %s AND project = %s
-            """, (user, project))
+            """, (user, normalized_project))
             
             result = cursor.fetchone()
             
@@ -203,6 +207,8 @@ def create_subscription_blueprint(mwo_auth):
         if notification_type not in ['edit', 'editor', 'both']:
             return jsonify({"error": "Invalid notification type"}), 400
 
+        normalized_project = normalize_project(project)
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -211,7 +217,7 @@ def create_subscription_blueprint(mwo_auth):
                 UPDATE user_project_watchlist 
                 SET notification_type = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE username = %s AND project = %s AND is_active = TRUE
-            """, (notification_type, user, project))
+            """, (notification_type, user, normalized_project))
             
             conn.commit()
             
@@ -290,11 +296,16 @@ def create_subscription_blueprint(mwo_auth):
         if not user:
             return jsonify({"error": "Authentication required"}), 401
 
-        data = request.json
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({"error": "Invalid JSON body"}), 400
+        
         language_code = data.get('language_code')
 
         if not language_code:
             return jsonify({"error": "Language code is required"}), 400
+
+        normalized_language = normalize_language_code(language_code)
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -304,7 +315,7 @@ def create_subscription_blueprint(mwo_auth):
                 UPDATE user_language_watchlist 
                 SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP
                 WHERE username = %s AND language_code = %s
-            """, (user, language_code))
+            """, (user, normalized_language))
             
             conn.commit()
             
