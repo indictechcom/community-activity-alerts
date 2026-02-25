@@ -36,8 +36,9 @@ def _fetch_sitematrix():
                             continue
                         site_url = site.get("url")
                         if site_url:
-                            cleaned_url = site_url.replace("https://", "").replace("http://", "")
-                            projects.add(cleaned_url)
+                            normalized_url = normalize_project(site_url)
+                            if normalized_url:
+                                projects.add(normalized_url)
                 continue
             
             if isinstance(val, dict):
@@ -51,8 +52,9 @@ def _fetch_sitematrix():
                         continue
                     site_url = site.get("url")
                     if site_url:
-                        cleaned_url = site_url.replace("https://", "").replace("http://", "")
-                        projects.add(cleaned_url)
+                        normalized_url = normalize_project(site_url)
+                        if normalized_url:
+                            projects.add(normalized_url)
         
         _SITEMATRIX_CACHE["projects"] = projects
         _SITEMATRIX_CACHE["languages"] = languages

@@ -245,7 +245,7 @@ def create_watchlist_blueprint(mwo_auth):
             return jsonify({"error": "Authentication required"}), 401
 
         data = request.get_json(silent=True)
-        if not data:
+        if data is None:
             return jsonify({"error": "Invalid JSON body"}), 400
         
         language_code = data.get('language_code')
