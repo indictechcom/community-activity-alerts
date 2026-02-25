@@ -165,8 +165,9 @@ curl http://localhost:5000/api/watchlist/language-watchlist
 - Database tables have been renamed
 
 **Migration Notes:**
-- All existing data is preserved during table rename
-- No data loss occurs
+- Migration `003_watchlist_system_update.sql` migrates existing `user_subscriptions` data to `user_project_watchlist` before dropping the old table
+- Migration `004_rename_to_watchlist.sql` preserves all data in `user_watches` and `user_language_watches` during the table renames to `user_project_watchlist` and `user_language_watchlist`
+- No data loss occurs when migrations are run in order
 - Users will need to use new URLs
 
 ## Testing Checklist
