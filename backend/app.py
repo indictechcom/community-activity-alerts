@@ -302,7 +302,6 @@ def get_activity_data():
         return jsonify({"error": str(e)}), 500
 
 # --- Editor Counts API Endpoints ---
-# --- Editor Counts API Endpoints ---
 @app.route("/api/editor-activity-data")
 def get_editor_activity_data():
     language = request.args.get("language")
