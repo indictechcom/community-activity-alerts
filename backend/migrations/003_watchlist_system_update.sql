@@ -1,10 +1,7 @@
 -- Migration 003: Update Watchlist System
--- Drops the old user_subscriptions table and creates the new split watchlist tables.
+-- Migrates user_subscriptions to the new split watchlist tables (project + language).
 
--- 1. Drop the old subscriptions table since we are replacing it
-DROP TABLE IF EXISTS user_subscriptions;
-
--- 2. Create Project Watchlist - users watching specific projects
+-- 1. Create Project Watchlist - users watching specific projects
 CREATE TABLE IF NOT EXISTS user_project_watchlist (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
@@ -19,7 +16,7 @@ CREATE TABLE IF NOT EXISTS user_project_watchlist (
     INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Project watchlist - users watching specific projects';
 
--- 3. Create Language Watchlist - users watching all projects from a language
+-- 2. Create Language Watchlist - users watching all projects from a language
 CREATE TABLE IF NOT EXISTS user_language_watchlist (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
@@ -34,7 +31,16 @@ CREATE TABLE IF NOT EXISTS user_language_watchlist (
     INDEX idx_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Language watchlist - users watching all projects from a language';
 
--- 4. Ensure Notification Logs exists (Will be ignored safely if 002 already created it)
+-- 3. Migrate existing data from user_subscriptions to user_project_watchlist (if table exists)
+INSERT IGNORE INTO user_project_watchlist (username, project, notification_type, is_active, created_at, updated_at)
+SELECT username, project, notification_type, is_active, created_at, updated_at
+FROM user_subscriptions
+WHERE EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'user_subscriptions');
+
+-- 4. Drop the old subscriptions table after migration
+DROP TABLE IF EXISTS user_subscriptions;
+
+-- 5. Ensure Notification Logs exists (Will be ignored safely if 002 already created it)
 CREATE TABLE IF NOT EXISTS notification_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
