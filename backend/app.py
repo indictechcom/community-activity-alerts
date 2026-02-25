@@ -276,7 +276,8 @@ def get_activity_data():
                 # Arrays for Plotly Trace
                 peak_timestamps_chart.append(row["chart_x"])
                 peak_values_chart.append(row["edits"])
-                peak_labels_chart.append(row["label"] if row["label"] else "")
+                label_value = row["label"] if pd.notna(row["label"]) else ""
+                peak_labels_chart.append(label_value)
 
         response_data = {
             "peaks": peaks,
@@ -374,7 +375,8 @@ def get_editor_activity_data():
                 # Arrays for Plotly Trace
                 peak_timestamps_chart.append(row["chart_x"])
                 peak_values_chart.append(row["editors"])
-                peak_labels_chart.append(row["label"] if row["label"] else "")
+                label_value = row["label"] if pd.notna(row["label"]) else ""
+                peak_labels_chart.append(label_value)
 
         response_data = {
             "peaks": peaks,
