@@ -22,8 +22,8 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/subscriptions',
-    name: 'Subscriptions',
+    path: '/watchlist',
+    name: 'Watchlist',
     component: Subscriptions
   }
 ];

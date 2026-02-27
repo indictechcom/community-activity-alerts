@@ -25,7 +25,7 @@
                 class="nav-item"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Subscriptions' ? cdxIconBell : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Watchlist' ? cdxIconBell : cdxIconUserGroup" />
                 </template>
                 {{ link.name }}
               </cdx-button>
@@ -119,7 +119,7 @@
                 class="w-full justify-start mb-1"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Subscriptions' ? cdxIconBell : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Watchlist' ? cdxIconBell : cdxIconUserGroup" />
                 </template>
                 {{ link.name }}
               </cdx-button>
@@ -214,7 +214,7 @@ onMounted(async () => {
 const navLinks = [
   { name: 'Edit Counts', path: '/' },
   { name: 'Editor Counts', path: '/editor-counts' },
-  { name: 'Subscriptions', path: '/subscriptions' },
+  { name: 'Watchlist', path: '/watchlist' },
   { name: 'Reviewer Dashboard', path: '/reviewer' }
 ]
 </script>
