@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import Home from '../views/Home.vue';
 import EditCounts from '../views/EditCounts.vue';
 import EditorCounts from '../views/EditorCounts.vue';
 import ReviewerDashboard from '../views/ReviewerDashboard.vue';
@@ -7,6 +8,11 @@ import Subscriptions from '../views/Subscriptions.vue';
 const routes = [
   {
     path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/edit-counts',
     name: 'EditCounts',
     component: EditCounts
   },
