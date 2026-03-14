@@ -92,7 +92,7 @@ const renderChart = () => {
   const COLOR_BASE = '#202122';
   const COLOR_SUBTLE = '#54595d';
   const COLOR_PROGRESSIVE = '#36c'; // Wiki Blue
-  const COLOR_DESTRUCTIVE = '#d33'; // Wiki Red (for alerts)
+  const COLOR_DESTRUCTIVE = '#00cc00'; // Wiki green (for alerts)
   const COLOR_GRID = '#eaecf0';
 
   const data = [

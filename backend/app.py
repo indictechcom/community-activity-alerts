@@ -251,7 +251,15 @@ def get_activity_data():
             return jsonify({"peaks": [], "chartData": {}})
 
         # Format Chart Data
-        chart_timestamps = pd.to_datetime(df_edits["timestamp"]).dt.strftime('%b %Y').tolist()
+        df_edits["timestamp"] = pd.to_datetime(df_edits["timestamp"])
+        df_edits = df_edits.set_index("timestamp")
+        # Create full monthly date range
+        full_range = pd.date_range(start=start, end=end, freq='MS')
+
+        # Reindex and fill missing months with 0
+        df_edits = df_edits.reindex(full_range, fill_value=0)
+        df_edits = df_edits.rename_axis("timestamp").reset_index()
+        chart_timestamps = df_edits["timestamp"].dt.strftime('%Y-%m-%d').tolist()
         chart_edits = df_edits["edits"].tolist()
 
         # Format Peaks Data
@@ -262,19 +270,19 @@ def get_activity_data():
 
         if not df_peaks.empty:
             # Convert timestamp to string for JSON serialization
-            df_peaks["timestamp_str"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%Y-%m-%d')
-            df_peaks["chart_x"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%b %Y')
+            df_peaks["timestamp"] = pd.to_datetime(df_peaks["timestamp"]).dt.to_period("M").dt.to_timestamp()
+            df_peaks["timestamp_iso"] = df_peaks["timestamp"].astype(str)   
             
             for _, row in df_peaks.iterrows():
                 peaks.append({
-                    "timestamp": row["timestamp_str"],
+                    "timestamp": row["timestamp_iso"],
                     "edits": int(row["edits"]),
                     "rolling_mean": round(float(row["rolling_mean"]), 2),
                     "threshold": round(float(row["threshold"]), 2),
                     "percentage_difference": round(float(row["percentage_difference"]), 2)
                 })
                 # Arrays for Plotly Trace
-                peak_timestamps_chart.append(row["chart_x"])
+                peak_timestamps_chart.append(row["timestamp_iso"])
                 peak_values_chart.append(row["edits"])
                 label_value = row["label"] if pd.notna(row["label"]) else ""
                 peak_labels_chart.append(label_value)
@@ -285,13 +293,20 @@ def get_activity_data():
                 "lineTrace": {
                     "x": chart_timestamps,
                     "y": chart_edits,
-                    "type": 'scatter', 'mode': 'lines+markers', 'name': 'Edits'
+                    "type": "scatter",
+                    "mode": "lines",
+                    "connectgaps": False,
+                    'name': 'Edits'
                 },
                 "peaksTrace": {
                     "x": peak_timestamps_chart,
                     "y": peak_values_chart,
-                    "mode": 'markers+text', 'name': 'Peaks',
-                    "text": peak_labels_chart
+                    "type": "scatter",
+                    "mode": "markers+text",
+                    "marker": {"color": "green", "size": 10},
+                    "text": peak_labels_chart,
+                    "textposition": "top center",
+                    "name": "Peaks"
                 }
             }
         }
@@ -313,67 +328,84 @@ def get_editor_activity_data():
         return jsonify({"error": "Missing required parameters"}), 400
 
     project = project_group
-    
-    # Standardize datetime parsing
-    start = datetime.strptime(datestart, "%b %Y").replace(day=1, hour=0, minute=0, second=0)
+
+    start = datetime.strptime(datestart, "%b %Y").replace(day=1)
     end_dt = datetime.strptime(dateend, "%b %Y")
     last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
     end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
 
     try:
         conn = get_db_connection()
-        # Handle both formats: with and without .org suffix for fallback
+
         project_without_org = project.replace('.org', '') if project.endswith('.org') else project
-        
-        # 1. Fetch Chart Data (Raw Counts)
+
+        # 1️⃣ Fetch editor counts
         query_editors = """
             SELECT timestamp, editor_count AS editors
             FROM editor_counts
-            WHERE (project = %s OR project = %s) AND timestamp BETWEEN %s AND %s
+            WHERE (project = %s OR project = %s)
+            AND timestamp BETWEEN %s AND %s
             ORDER BY timestamp ASC
         """
-        df_editors = pd.read_sql(query_editors, conn, params=(project, project_without_org, start, end))
-        
-        # 2. Fetch Pre-computed Peaks from Editor Alerts Table
+
+        df_editors = pd.read_sql(
+            query_editors, conn,
+            params=(project, project_without_org, start, end)
+        )
+
+        #Fetch editor peaks
         query_peaks = """
-            SELECT timestamp, editor_count AS editors, rolling_mean, threshold, percentage_difference, label
+            SELECT timestamp, editor_count AS editors,
+                   rolling_mean, threshold, percentage_difference, label
             FROM editor_alerts
-            WHERE (project = %s OR project = %s) AND timestamp BETWEEN %s AND %s
+            WHERE (project = %s OR project = %s)
+            AND timestamp BETWEEN %s AND %s
             ORDER BY timestamp ASC
         """
-        df_peaks = pd.read_sql(query_peaks, conn, params=(project, project_without_org, start, end))
-        
+
+        df_peaks = pd.read_sql(
+            query_peaks, conn,
+            params=(project, project_without_org, start, end)
+        )
+
         conn.close()
 
         if df_editors.empty:
             return jsonify({"peaks": [], "chartData": {}})
 
-        # Format Chart Data
-        chart_timestamps = pd.to_datetime(df_editors["timestamp"]).dt.strftime('%b %Y').tolist()
+        df_editors["timestamp"] = pd.to_datetime(df_editors["timestamp"])
+        df_editors = df_editors.set_index("timestamp")
+
+        full_range = pd.date_range(start=start, end=end, freq='MS')
+
+        df_editors = df_editors.reindex(full_range, fill_value=0)
+        df_editors = df_editors.rename_axis("timestamp").reset_index()
+
+        chart_timestamps = df_editors["timestamp"].dt.strftime('%Y-%m-%d').tolist()
         chart_editors = df_editors["editors"].tolist()
 
-        # Format Peaks Data
+        # Format Peaks
         peaks = []
         peak_timestamps_chart = []
         peak_values_chart = []
         peak_labels_chart = []
 
         if not df_peaks.empty:
-            # Convert timestamp to string for JSON serialization
-            df_peaks["timestamp_str"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%Y-%m-%d')
-            df_peaks["chart_x"] = pd.to_datetime(df_peaks["timestamp"]).dt.strftime('%b %Y')
-            
+            df_peaks["timestamp"] = pd.to_datetime(df_peaks["timestamp"]).dt.to_period("M").dt.to_timestamp()
+            df_peaks["timestamp_iso"] = df_peaks["timestamp"].astype(str)
+
             for _, row in df_peaks.iterrows():
                 peaks.append({
-                    "timestamp": row["timestamp_str"],
+                    "timestamp": row["timestamp_iso"],
                     "editors": int(row["editors"]),
                     "rolling_mean": round(float(row["rolling_mean"]), 2),
                     "threshold": round(float(row["threshold"]), 2),
                     "percentage_difference": round(float(row["percentage_difference"]), 2)
                 })
-                # Arrays for Plotly Trace
-                peak_timestamps_chart.append(row["chart_x"])
+
+                peak_timestamps_chart.append(row["timestamp_iso"])
                 peak_values_chart.append(row["editors"])
+
                 label_value = row["label"] if pd.notna(row["label"]) else ""
                 peak_labels_chart.append(label_value)
 
@@ -383,17 +415,24 @@ def get_editor_activity_data():
                 "lineTrace": {
                     "x": chart_timestamps,
                     "y": chart_editors,
-                    "type": 'scatter', 'mode': 'lines+markers', 'name': 'Editors'
+                    "type": "scatter",
+                    "mode": "lines",
+                    "connectgaps": False,
+                    "name": "Editors"
                 },
                 "peaksTrace": {
                     "x": peak_timestamps_chart,
                     "y": peak_values_chart,
-                    "mode": 'markers+text', 'name': 'Peaks',
-                    "text": peak_labels_chart
+                    "type": "scatter",
+                    "mode": "markers+text",
+                    "marker": {"color": "green", "size": 10},
+                    "text": peak_labels_chart,
+                    "textposition": "top center",
+                    "name": "Peaks"
                 }
             }
         }
-        
+
         return jsonify(response_data)
 
     except Exception as e:
