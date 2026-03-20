@@ -3,7 +3,7 @@
     
     <!-- 1. Header Section -->
     <div class="flex items-center gap-3 mb-6">
-      <div class="p-2 bg-red-50 text-red-600 rounded-lg">
+      <div class="p-2 bg-green-50 text-green-600 rounded-lg">
         <cdx-icon :icon="cdxIconAlert" size="medium" />
       </div>
       <div>
@@ -184,16 +184,9 @@ const getCountLabel = () => {
 
 // Codex Standard Status Colors
 const getBadgeStyles = (percentage) => {
-  if (percentage >= 50) {
-    // Critical (Red)
-    return 'bg-red-100 text-red-700 border border-red-200'
-  }
-  if (percentage >= 30) {
-    // Warning (Orange/Yellow)
-    return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-  }
-  // Notice (Blue/Gray)
-  return 'bg-blue-100 text-blue-700 border border-blue-200'
+  
+  // Notice (green)
+  return 'bg-green-100 text-green-700 border border-green-200'
 }
 
 // Fetch annotations for all peaks
@@ -288,10 +281,10 @@ watch(() => props.peaks, () => {
 }
 
 /* Destructive / Alert Colors */
-.bg-red-50 {
-  background-color: #fee7e6; /* Codex Red 50 (approx) */
+.bg-green-50 {
+  background-color: #e6f4e6; /* Codex Green 50 (approx) */
 }
-.text-red-600 {
-  color: var(--color-destructive, #d33);
+.text-green-600 {
+  color: var(--color-destructive, #cc0000);
 }
 </style>
