@@ -30,7 +30,7 @@
             <span class="text-gray-600">Edits</span>
           </div>
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 bg-[#d33] transform rotate-45"></span>
+            <span class="w-2 h-2 bg-green-500 transform rotate-45"></span>
             <span class="text-gray-600">Alerts</span>
           </div>
         </div>
