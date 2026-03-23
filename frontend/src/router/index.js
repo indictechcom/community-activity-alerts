@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import EditCounts from '../views/EditCounts.vue';
 import EditorCounts from '../views/EditorCounts.vue';
-import ReviewerDashboard from '../views/ReviewerDashboard.vue';
+// import ReviewerDashboard from '../views/ReviewerDashboard.vue';
 import Subscriptions from '../views/Subscriptions.vue';
 
 const routes = [
@@ -20,12 +20,6 @@ const routes = [
     path: '/editor-counts',
     name: 'EditorCounts',
     component: EditorCounts
-  },
-  {
-    path: '/reviewer',
-    name: 'ReviewerDashboard',
-    component: ReviewerDashboard,
-    meta: { requiresAuth: true }
   },
   {
     path: '/watchlist',

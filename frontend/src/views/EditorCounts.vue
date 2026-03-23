@@ -115,7 +115,7 @@ const fetchEditorData = async (filters) => {
 
   // Update Context for the UI
   const langName = filters.language.toUpperCase()
-  const projName = filters.project_group.charAt(0).toUpperCase() + filters.project_group.slice(1)
+  const projName = filters.project_group.charAt(0).toLowerCase() + filters.project_group.slice(1)
   currentContext.title = `${langName} ${projName} Editors`
   currentContext.subtitle = `Editor activity from ${filters.datestart} to ${filters.dateend}`
   projectName.value = projName
