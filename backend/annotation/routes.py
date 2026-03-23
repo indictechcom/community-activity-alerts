@@ -85,40 +85,31 @@ def create_annotation_blueprint(mwo_auth):
                 conn.close()
                 return jsonify({"error": "You already have a pending annotation for this peak"}), 409
             
-            # Insert annotation
+            # Insert annotation as approved (auto-approve)
             cursor.execute(
                 """
                 INSERT INTO peak_annotations 
-                (project, timestamp, peak_type, description, relevant_link, submitted_by)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                (project, timestamp, peak_type, description, relevant_link, submitted_by, status, is_visible, reviewed_by, reviewed_at)
+                VALUES (%s, %s, %s, %s, %s, %s, 'approved', TRUE, %s, %s)
                 """,
-                (project, timestamp, peak_type, description, relevant_link, username)
+                (project, timestamp, peak_type, description, relevant_link, username, username, datetime.now())
             )
             annotation_id = cursor.lastrowid
             conn.commit()
-            
             # Log the action
             log_annotation_action(
                 annotation_id, 
                 'submit', 
                 username,
-                f"Submitted annotation for {project} at {timestamp}",
+                f"Submitted annotation for {project} at {timestamp} (auto-approved)",
                 request.remote_addr,
                 request.headers.get('User-Agent')
             )
-            
-            # Send notification to reviewers
-            send_reviewer_notification(
-                "New Annotation Submitted",
-                f"User {username} submitted an annotation for {project} ({peak_type}) at {timestamp}.\n\nDescription: {description}"
-            )
-            
             conn.close()
-            
             return jsonify({
                 "success": True,
                 "annotation_id": annotation_id,
-                "message": "Annotation submitted for review"
+                "message": "Annotation submitted and auto-approved"
             }), 201
             
         except Exception as e:
@@ -673,4 +664,88 @@ def create_annotation_blueprint(mwo_auth):
             logger.error(f"Error fetching stats: {e}")
             return jsonify({"error": "Failed to fetch stats"}), 500
 
+    # --- Update Annotation (Universal Edit) ---
+    @annotation_bp.route('/update', methods=['PUT'])
+    def update_annotation():
+        """
+        Update an existing annotation (description and link).
+        Allows any authenticated user to edit any annotation.
+        """
+        current_user = mwo_auth.get_current_user(True)
+        if not current_user:
+            return jsonify({"error": "Authentication required"}), 401
+
+        username = current_user
+        data = request.json
+
+        annotation_id = data.get('annotation_id')
+        new_description = data.get('description', '').strip()
+        new_link = data.get('relevant_link', '').strip() or None
+
+        if not annotation_id:
+            return jsonify({"error": "Missing annotation_id"}), 400
+        if not new_description:
+            return jsonify({"error": "Description required"}), 400
+
+        # Validate description length (50 words max)
+        word_count = len(new_description.split())
+        if word_count > 50:
+            return jsonify({"error": f"Description exceeds 50 words (current: {word_count})"}), 400
+        if len(new_description) < 10:
+            return jsonify({"error": "Description too short (minimum 10 characters)"}), 400
+
+        # Check user's global edit count
+        edit_count = get_user_edit_count(username)
+        if edit_count is None:
+            if is_reviewer(username):
+                edit_count = 9999 #faking edit count for a reviewer
+            else:
+                return jsonify({"error": "Unable to verify edit count"}), 500
+        
+        if edit_count < 1000 and not is_reviewer(username):
+            return jsonify({
+                "error": f"Insufficient edit count. Required: 1000, Current: {edit_count}"
+            }), 403
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Check annotation exists
+            cursor.execute(
+                "SELECT id FROM peak_annotations WHERE id = %s",
+                (annotation_id,)
+            )
+            if not cursor.fetchone():
+                conn.close()
+                return jsonify({"error": "Annotation not found"}), 404
+
+            # Update annotation
+            cursor.execute(
+                """
+                UPDATE peak_annotations
+                SET description = %s, relevant_link = %s
+                WHERE id = %s
+                """,
+                (new_description, new_link, annotation_id)
+            )
+            conn.commit()
+
+            # Log the action
+            log_annotation_action(
+                annotation_id,
+                'update',
+                username,
+                f"Edited annotation (universal edit)",
+                request.remote_addr,
+                request.headers.get('User-Agent')
+            )
+
+            conn.close()
+            return jsonify({"success": True, "message": "Annotation updated successfully"}), 200
+        except Exception as e:
+            logger.error(f"Error updating annotation: {e}")
+            return jsonify({"error": "Failed to update annotation"}), 500
+    
+    
     return annotation_bp

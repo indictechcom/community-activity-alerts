@@ -16,20 +16,20 @@
       </div>
     </div>
 
-    <!-- Annotation Modal -->
+    <!-- Annotation Modal (Add ONLY) -->
     <AnnotationModal 
       :isOpen="showAnnotationModal"
       :peakData="selectedPeak"
-      @close="showAnnotationModal = false"
+      @close="closeAnnotationModal"
       @success="handleAnnotationSuccess"
     />
 
-    <!-- Report Modal -->
-    <ReportModal
-      :isOpen="showReportModal"
-      :annotationData="selectedAnnotation"
-      @close="showReportModal = false"
-      @success="handleReportSuccess"
+    <!-- Edit Annotation Modal (NEW) -->
+    <EditAnnotationModal
+      :isOpen="showEditAnnotationModal"
+      :annotationData="editAnnotationData"
+      @close="closeEditAnnotationModal"
+      @success="handleAnnotationSuccess"
     />
 
     <!-- 2. Data Table -->
@@ -56,22 +56,22 @@
             class="group hover:bg-blue-50 transition-colors duration-150"
           >
             <!-- Date -->
-            <td class="py-3 px-4 text-sm text-gray-900 font-medium">
+            <td class="py-3 px-4 text-sm text-gray-900 font-medium align-middle">
               {{ formatDate(peak.timestamp) }}
             </td>
             
             <!-- Edits or Editors -->
-            <td class="py-3 px-4 text-sm text-gray-900 text-right font-mono">
+            <td class="py-3 px-4 text-sm text-gray-900 text-right font-mono align-middle">
               {{ getCountValue(peak).toLocaleString() }}
             </td>
             
             <!-- Rolling Mean -->
-            <td class="py-3 px-4 text-sm text-gray-500 text-right font-mono">
+            <td class="py-3 px-4 text-sm text-gray-500 text-right font-mono align-middle">
               {{ peak.rolling_mean.toFixed(1) }}
             </td>
             
             <!-- Threshold -->
-            <td class="py-3 px-4 text-sm text-gray-500 text-right font-mono">
+            <td class="py-3 px-4 text-sm text-gray-500 text-right font-mono align-middle">
               {{ peak.threshold.toFixed(1) }}
             </td>
             
@@ -88,7 +88,7 @@
             <!-- Annotation -->
             <td class="py-3 px-4">
               <div v-if="peakAnnotations[peak.timestamp]" class="space-y-2">
-                <div class="text-sm text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
+                <div class="text-sm text-gray-700 bg-blue-50 p-2 rounded border border-blue-200 break-words whitespace-normal max-w-xs">
                   <p class="mb-1">{{ peakAnnotations[peak.timestamp].description }}</p>
                   <a 
                     v-if="peakAnnotations[peak.timestamp].relevant_link"
@@ -105,11 +105,11 @@
                   </p>
                 </div>
                 <button
-                  @click="openReportModal(peak, peakAnnotations[peak.timestamp])"
-                  class="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                  @click="openEditAnnotationModal(peak, peakAnnotations[peak.timestamp])"
+                  class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
                 >
                   <cdx-icon :icon="cdxIconFlag" size="x-small" />
-                  Report
+                  Edit
                 </button>
               </div>
               <button
@@ -140,7 +140,7 @@ import { ref, watch, onMounted } from 'vue'
 import { CdxIcon } from '@wikimedia/codex'
 import { cdxIconAlert, cdxIconCheck, cdxIconAdd, cdxIconLinkExternal, cdxIconFlag } from '@wikimedia/codex-icons'
 import AnnotationModal from './AnnotationModal.vue'
-import ReportModal from './ReportModal.vue'
+import EditAnnotationModal from './EditAnnotationModal.vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -155,10 +155,10 @@ const props = defineProps({
 })
 
 const showAnnotationModal = ref(false)
-const showReportModal = ref(false)
 const selectedPeak = ref({})
-const selectedAnnotation = ref({})
 const peakAnnotations = ref({})
+const editAnnotationData = ref(null)
+const showEditAnnotationModal = ref(false)
 
 // Formats a timestamp like "2025-02-01" into "Feb 1, 2025"
 const formatDate = (dateString) => {
@@ -191,6 +191,7 @@ const getBadgeStyles = (percentage) => {
 
 // Fetch annotations for all peaks
 const fetchAnnotations = async () => {
+  peakAnnotations.value = {}
   if (!props.peaks || props.peaks.length === 0) return
 
   const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
@@ -218,33 +219,50 @@ const fetchAnnotations = async () => {
 // Open annotation modal
 const openAnnotationModal = (peak) => {
   const peakType = peak.edits !== undefined ? 'edit' : 'editor'
+
   selectedPeak.value = {
     project: props.project,
     timestamp: peak.timestamp,
     peak_type: peakType
   }
+
   showAnnotationModal.value = true
 }
 
-// Open report modal
-const openReportModal = (peak, annotation) => {
-  selectedAnnotation.value = {
-    annotation_id: annotation.id,
-    peak: peak,
-    annotation: annotation
+const openEditAnnotationModal = (peak, annotation) => {
+  const peakType = peak.edits !== undefined ? 'edit' : 'editor'
+
+  selectedPeak.value = {
+    project: props.project,
+    timestamp: peak.timestamp,
+    peak_type: peakType
   }
-  showReportModal.value = true
+
+  editAnnotationData.value = {
+    id: annotation.id,
+    description: annotation.description,
+    relevant_link: annotation.relevant_link || ''
+  }
+
+  showEditAnnotationModal.value = true   
 }
+
+const closeAnnotationModal = () => {
+  showAnnotationModal.value = false
+}
+
+const closeEditAnnotationModal = () => {
+  showEditAnnotationModal.value = false
+  editAnnotationData.value = null
+}
+
 
 // Handle successful annotation submission
 const handleAnnotationSuccess = () => {
   fetchAnnotations()
 }
 
-// Handle successful report submission
-const handleReportSuccess = () => {
-  // Optionally refresh or show a message
-}
+
 
 // Watch for changes in peaks and fetch annotations
 watch(() => props.peaks, () => {

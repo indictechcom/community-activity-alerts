@@ -215,8 +215,7 @@ const navLinks = [
   { name: 'Home', path: '/' },
   { name: 'Edit Counts', path: '/edit-counts' },
   { name: 'Editor Counts', path: '/editor-counts' },
-  { name: 'Watchlist', path: '/watchlist' },
-  { name: 'Reviewer Dashboard', path: '/reviewer' }
+  { name: 'Watchlist', path: '/watchlist' }
 ]
 </script>
 
