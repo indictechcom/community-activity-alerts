@@ -1,162 +1,260 @@
 # Community Activity Alerts
 
-## Overview
+Community Activity Alerts helps users explore editing activity across Wikimedia projects. It collects monthly edit and editor statistics, identifies unusual activity peaks, and displays them through a web dashboard.
 
-This project tracks and analyzes edit activity across Wikimedia projects. It consists of scripts for fetching, storing, and analyzing edit data, as well as a web interface for visualization.
+## Getting started
 
-## Script Descriptions
+The easiest way to run the project locally is with Docker. Docker will set up the database, backend, frontend, and scheduled jobs for you.
 
-### fetch_and_store_cron.py
+## 1. Fork the repository
 
-- **Purpose:** Fetches monthly edit counts for all Wikimedia projects from the Wikimedia API and stores them in the `edit_counts` table in the database.
-- **How it works:**
-  - Downloads edit count data for each project.
-  - Ensures the `edit_counts` table exists.
-  - Inserts or updates edit counts for each project and month.
-- **Intended use:** Run regularly (e.g., as a cron job) to keep the edit counts up to date.
+Before working on the project, fork the repository to your own GitHub account.
 
-### fetch_and_store_script.py
+1. Visit [Community Activity Alerts](https://github.com/indictechcom/community-activity-alerts).
+2. Click **Fork** in the top-right corner.
+3. Create a fork under your GitHub account.
 
-- **Purpose:** Similar to `fetch_and_store_cron.py`; may be used for manual runs or testing.
-- **How it works:**
-  - Fetches edit counts from the Wikimedia API.
-  - Stores results in the `edit_counts` table.
-- **Intended use:** Manual or ad-hoc data fetching.
+Now clone **your fork**, not the original repository:
 
-### Community alerts .py
-
-- **Purpose:** Detects peaks (unusual spikes) in edit activity for each project and stores these as alerts in the `community_alerts` table.
-- **How it works:**
-  - Reads all edit data from `edit_counts`.
-  - Runs a peak detection algorithm for each project.
-  - Stores detected peaks in the `community_alerts` table.
-- **Intended use:** Run after edit data is up to date, to analyze and record significant activity spikes.
-
-## Database Tables
-
-- `edit_counts`: Stores raw monthly edit counts for each project.
-- `community_alerts`: Stores detected peaks/alerts for each project.
-
-## Local Setup
-
-### Prerequisites
-- Python 3.7+
-- MySQL server
-- Virtual environment (recommended)
-
-### MySQL Installation
-
-**Ubuntu/Debian:**
 ```bash
-sudo apt update
-sudo apt install mysql-server
-sudo systemctl start mysql
-sudo systemctl enable mysql
+git clone https://github.com/<your-github-username>/community-activity-alerts.git
+cd community-activity-alerts
 ```
 
-**macOS:**
+Replace `<your-github-username>` with your GitHub username.
+
+## 2. Install Docker
+
+You need Docker and Docker Compose to run the project.
+
+- **Windows:** Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/).
+- **macOS:** Install [Docker Desktop for Mac](https://docs.docker.com/desktop/setup/install/mac-install/).
+- **Linux:** Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Docker Compose plugin](https://docs.docker.com/compose/install/linux/).
+
+After installation, open a terminal and check that Docker is working:
+
 ```bash
-# Using Homebrew
-brew install mysql
-brew services start mysql
+docker --version
+docker compose version
 ```
 
-**Windows:**
-- Download MySQL installer from [mysql.com](https://dev.mysql.com/downloads/installer/)
-- Run installer and follow setup wizard
-- Start MySQL service 
+Both commands should display their installed versions.
 
-> **Note:** For production setups, consider running `mysql_secure_installation` to enhance security. For local development, this is optional.
+## 3. Configure environment variables
 
-### Installation
+The backend needs a local environment file to connect to the database and configure the application.
 
-1. **Clone and set up environment:**
-   ```bash
-   git clone <repository-url>
-   cd community-activity-alerts
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   ```
+First, create the file from the sample.
 
-2. **Set up MySQL database:**
-   
-   **Connect to MySQL:**
-   ```bash
-   # Connect as root (default) or your MySQL user
-   mysql -u root -p
-   ```
-   
-   **Create database and user:**
-   ```sql
-   -- Create the database
-   CREATE DATABASE community_alerts;
-   
-   -- Create a user for the application
-   CREATE USER 'wikim'@'localhost' IDENTIFIED BY 'wikimedia';
-   
-   -- Grant privileges to the user
-   GRANT ALL PRIVILEGES ON community_alerts.* TO 'wikim'@'localhost';
-   
-   -- Apply changes
-   FLUSH PRIVILEGES;
-   
-   -- Exit MySQL
-   EXIT;
-   ```
+**Linux / macOS:**
 
-3. **Configure database connection:**
-   
-   Edit the database connection settings in your Python files:
-   - In `app.py`: Update the `get_db_connection()` function
-   - In other scripts: Update the database configuration variables
-   
-   ```python
-   # Example configuration (adjust as needed)
-   conn = pymysql.connect(
-       host="localhost",           # Your MySQL host
-       user='wikim',              # Your MySQL username
-       password='wikimedia',      # Your MySQL password
-       database="community_alerts", # Your database name
-       charset="utf8mb4",
-   )
-   ```
+```bash
+cp backend/sample.env backend/.env
+```
 
-4. **Create database tables:**
-   
-   The tables will be created automatically when you run the scripts for the first time. The application creates:
-   - `edit_counts`: Stores raw monthly edit counts
-   - `community_alerts`: Stores detected activity peaks
+**Windows (PowerShell):**
 
-5. **Collect data:**
-   ```bash
-   python fetch_and_store_cron.py
-   ```
-   This fetches 3 years of edit data for all Wikimedia projects (may take 30+ minutes).
+```powershell
+Copy-Item backend/sample.env backend/.env
+```
 
-6. **Generate alerts:**
-   ```bash
-   python "Community alerts .py"
-   ```
-   This analyzes the data and detects activity peaks.
+Open `backend/.env` in a text editor and check the following values:
 
-7. **Start the web interface:**
-   ```bash
-   python app.py
-   ```
-   Visit `http://localhost:5000` to explore the data.
+```env
+ENV=dev
+DB_NAME=community_alerts
+BASE_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:5173
+```
 
-### Troubleshooting
+Make sure `DB_NAME` is set to `community_alerts`. This is the database created by the local Docker setup.
 
-- **MySQL connection issues:** Verify MySQL is running and credentials are correct
-- **Permission errors:** Ensure the MySQL user has proper privileges on the database
-- **Port conflicts:** Default MySQL port is 3306, Flask runs on port 5000
-- **OS-specific MySQL setup:** Refer to official MySQL documentation for your operating system
+Keep the other sample settings unless you need to configure additional features.
 
-## Usage
+**Note:** MediaWiki OAuth credentials (`CONSUMER_KEY` and `CONSUMER_SECRET`) are needed for MediaWiki login. Bot credentials (`BOT_USERNAME` and `BOT_PASSWORD`) are needed for email notifications. You can configure these when working on those features.
 
-The web interface allows you to:
-- Select different Wikimedia language communities and projects
-- Set custom date ranges with an interactive slider
-- View detected activity peaks in both table and chart format
-- Click on chart peaks to add labels and annotations
+Do not commit your `backend/.env` file or share your private credentials.
+
+## 4. Configure the initial data backfill
+
+The project uses Wikimedia's API to fetch historical edit and editor statistics.
+
+For a fresh local setup, you need to fetch historical data before the dashboard can display activity.
+
+Open the **`docker-compose.yml`** file in the project root.
+
+Find the `cron` service and its `environment` section:
+
+```yaml
+environment:
+  ENV: dev
+  SKIP_BACKFILL: "true"
+```
+
+For your **first run**, change `SKIP_BACKFILL` to `"false"`:
+
+```yaml
+environment:
+  ENV: dev
+  SKIP_BACKFILL: "false"
+```
+
+This tells the cron container to perform the initial historical backfill when it starts.
+
+The backfill covers approximately six years of monthly data for both edit counts and editor counts. It can take some time to finish.
+
+**Important:** After the initial backfill has completed successfully(after setting up the project),don't forget to change `SKIP_BACKFILL` back to `"true"` in `docker-compose.yml`. This prevents the historical backfill from running again whenever you restart the containers.
+
+## 5. Start the application
+
+Make sure Docker is running, then execute this command from the project root:
+
+```bash
+docker compose up --build
+```
+
+The first run may take a few minutes because Docker needs to download the required images and build the application.
+
+Docker Compose starts the services in the required order:
+
+1. **Database (`db`)** – Starts the MariaDB database.
+2. **Migrations (`migrate`)** – Creates the application tables by applying the SQL migration files.
+3. **Backend (`backend`)** – Starts the Flask application.
+4. **Cron (`cron`)** – Fetches historical data on the first run and handles scheduled jobs.
+5. **Frontend (`frontend`)** – Starts the Vue application.
+
+You do not need to run the database migrations manually. The migration service handles them automatically.
+
+Keep the terminal open while the application is running.
+
+## 6. Open the application
+
+Once the services have started, open the following URL in your browser:
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| Backend | http://localhost:5000 |
+
+The frontend is where you can explore the dashboard.
+
+## 7. Check whether data was fetched
+
+The initial backfill may take some time. You can check the cron logs in another terminal:
+
+```bash
+docker compose logs -f cron
+```
+
+To check whether the migrations completed successfully:
+
+```bash
+docker compose logs migrate
+```
+
+You should see messages indicating that the migration files were applied successfully.
+
+You can also check the database directly:
+
+```bash
+docker compose exec db mariadb -u wikim -pwikimedia community_alerts
+```
+
+Once connected, run:
+
+```sql
+SHOW TABLES;
+
+SELECT COUNT(*) FROM edit_counts;
+SELECT COUNT(*) FROM editor_counts;
+```
+
+Both tables should contain records after the backfill has completed.
+
+Type `exit` to leave the MariaDB prompt.
+
+## 8. Stop the application
+
+To stop the running containers, press `Ctrl + C` in the terminal where Docker Compose is running.
+
+You can also run:
+
+```bash
+docker compose down
+```
+
+This stops and removes the containers and networks but **keeps your database data**.
+
+To start the application again:
+
+```bash
+docker compose up
+```
+
+You do not need to run the initial backfill again. Keep `SKIP_BACKFILL` set to `"true"` after the first successful backfill.
+
+## 9. Start with a clean database
+
+If you want to reset your local development environment and start from scratch, run:
+
+```bash
+docker compose down --volumes --rmi local --remove-orphans
+```
+
+This removes the project's containers, database volume, networks, and locally built images.
+
+**Warning:** This permanently deletes the local database and all data stored in it. Do not run this command if you want to keep your existing data.
+
+After resetting, follow the setup instructions again, including setting `SKIP_BACKFILL` to `"false"` for the new initial backfill.
+
+---
+
+## Project structure
+
+```text
+community-activity-alerts/
+├── backend/
+│   ├── app.py
+│   ├── config.py
+│   ├── migrate.py
+│   ├── migrations/
+│   ├── alerts/
+│   ├── annotation/
+│   ├── auth/
+│   ├── notification/
+│   └── subscription/
+│
+├── cron/
+│   ├── fetch_and_store_cron.py
+│   ├── fetch_and_store_editors_cron.py
+│   ├── monthly_peak_detection.py
+│   ├── cronjob
+│   └── Dockerfile
+│
+├── frontend/
+│   └── src/
+│
+├── docker-compose.yml
+└── init.sql
+```
+
+### Main components
+
+- **Backend:** Flask application that provides APIs and handles application logic.
+- **Frontend:** Vue application used to display activity data and interact with the dashboard.
+- **Database:** MariaDB database that stores monthly statistics, detected peaks, annotations, and subscriptions.
+- **Cron:** Scripts that fetch Wikimedia statistics, detect activity peaks, and handle scheduled notifications.
+- **Migrations:** SQL files in `backend/migrations/` that create and update the database schema.
+
+## Contributing
+
+We welcome contributions! If you want to work on an issue or add a feature:
+
+1. Fork the repository.
+2. Clone your fork to your computer.
+3. Create a new branch for your changes.
+4. Make your changes and test them locally.
+5. Push your branch to your fork.
+6. Open a Pull Request against the original repository.
+
+For questions or discussions, open an issue in the [GitHub repository](https://github.com/indictechcom/community-activity-alerts).
