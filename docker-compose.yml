@@ -27,6 +27,8 @@ services:
       depends_on:
         db:
           condition: service_healthy
+        migrate:
+          condition: service_completed_successfully
       restart: always
       networks:
         - comm-alerts
@@ -48,8 +50,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      cron:
-        condition: service_started
+      migrate:
+          condition: service_completed_successfully
     environment:
       VITE_BACKEND_URL : http://localhost:5000/
       ENV : dev
@@ -75,6 +77,18 @@ services:
     restart: always
     networks:
       - comm-alerts 
+
+  migrate:
+    build: ./backend
+    command: ["python", "migrate.py"]
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - comm-alerts
 
 volumes:
   mariadb_data:
