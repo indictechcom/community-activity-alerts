@@ -65,17 +65,76 @@ ENV=dev
 DB_NAME=community_alerts
 BASE_URL=http://localhost:5000
 FRONTEND_URL=http://localhost:5173
+MWO_BASE_URL=https://meta.wikimedia.org/w
 ```
 
 Make sure `DB_NAME` is set to `community_alerts`. This is the database created by the local Docker setup.
 
-Keep the other sample settings unless you need to configure additional features.
+You will also need to configure MediaWiki OAuth credentials if you want to use MediaWiki login. Follow the next section.
 
-**Note:** MediaWiki OAuth credentials (`CONSUMER_KEY` and `CONSUMER_SECRET`) are needed for MediaWiki login. Bot credentials (`BOT_USERNAME` and `BOT_PASSWORD`) are needed for email notifications. You can configure these when working on those features.
+## 4. Create MediaWiki OAuth credentials
 
-Do not commit your `backend/.env` file or share your private credentials.
+The application uses MediaWiki OAuth to let users log in with their Wikimedia accounts.
 
-## 4. Configure the initial data backfill
+You need a **Consumer Key** and a **Consumer Secret** for local development.
+
+### 4.1 Register an OAuth consumer
+
+Open the [MediaWiki OAuth 1.0a consumer registration page](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth1a).
+
+Fill in the registration form with the following details:
+
+| Field | Value |
+|---|---|
+| Application name | Community Activity Alerts (Local Development) |
+| Consumer version | 1.0 |
+| Application description | Local development setup for Community Activity Alerts |
+| OAuth callback URL | `http://localhost:5000/oauth-callback` |
+
+
+### 4.2 Select the callback option
+
+In the registration form:
+
+- Select "Allow consumer to specify a callback in requests and use 'callback' URL above as a required prefix."
+- Select the final checkbox at the end of the page that starts with "By submitting this application, you acknowledge...."
+
+Leave rest of the settings as it is.
+
+### 4.3 Get your Consumer Key and Consumer Secret
+
+After submitting the registration form, MediaWiki will provide:
+
+- Consumer Key (also called Consumer Token)
+- Consumer Secret (also called Secret Token)
+
+Copy both values and keep them somewhere safe. You will need them in your local environment file.
+
+Do not share these credentials or commit them to GitHub.
+
+### 4.4 Add the credentials to `backend/.env`
+
+Open `backend/.env` and find these two entries:
+
+```env
+CONSUMER_KEY=your_consumer_key_here
+CONSUMER_SECRET=your_consumer_secret_here
+```
+
+Replace the placeholder values with the credentials you received:
+
+```env
+CONSUMER_KEY=<your-consumer-key>
+CONSUMER_SECRET=<your-consumer-secret>
+```
+
+Save the file.
+
+Your local OAuth configuration is now ready.
+
+**Note:** The callback URL registered with MediaWiki must match the URL used by your local application. For this Docker setup, use `http://localhost:5000/oauth-callback`.
+
+## 5. Configure the initial data backfill
 
 The project uses Wikimedia's API to fetch historical edit and editor statistics.
 
@@ -103,9 +162,9 @@ This tells the cron container to perform the initial historical backfill when it
 
 The backfill covers approximately six years of monthly data for both edit counts and editor counts. It can take some time to finish.
 
-**Important:** After the initial backfill has completed successfully(after setting up the project),don't forget to change `SKIP_BACKFILL` back to `"true"` in `docker-compose.yml`. This prevents the historical backfill from running again whenever you restart the containers.
+**Important:** After the initial backfill has completed successfully, change `SKIP_BACKFILL` back to `"true"` in `docker-compose.yml`. This prevents the historical backfill from running again whenever you restart the containers.
 
-## 5. Start the application
+## 6. Start the application
 
 Make sure Docker is running, then execute this command from the project root:
 
@@ -127,7 +186,7 @@ You do not need to run the database migrations manually. The migration service h
 
 Keep the terminal open while the application is running.
 
-## 6. Open the application
+## 7. Open the application
 
 Once the services have started, open the following URL in your browser:
 
@@ -138,7 +197,9 @@ Once the services have started, open the following URL in your browser:
 
 The frontend is where you can explore the dashboard.
 
-## 7. Check whether data was fetched
+To test MediaWiki login, use the login option in the application and authorize it with your Wikimedia account.
+
+## 8. Check whether data was fetched
 
 The initial backfill may take some time. You can check the cron logs in another terminal:
 
@@ -173,7 +234,7 @@ Both tables should contain records after the backfill has completed.
 
 Type `exit` to leave the MariaDB prompt.
 
-## 8. Stop the application
+## 9. Stop the application
 
 To stop the running containers, press `Ctrl + C` in the terminal where Docker Compose is running.
 
@@ -193,7 +254,7 @@ docker compose up
 
 You do not need to run the initial backfill again. Keep `SKIP_BACKFILL` set to `"true"` after the first successful backfill.
 
-## 9. Start with a clean database
+## 10. Start with a clean database
 
 If you want to reset your local development environment and start from scratch, run:
 
