@@ -90,6 +90,13 @@ def get_all_communities():
     return jsonify(languages)
 
 
+# --- Activity types supported by decline detection ---
+ACTIVITY_TYPES = {
+    "edit": {"table": "edit_counts", "column": "edit_count", "value_key": "edits"},
+    "editor": {"table": "editor_counts", "column": "editor_count", "value_key": "editors"},
+}
+
+
 # --- Peak detection function ---
 def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
     df = df.sort_values("timestamp").reset_index(drop=True)
@@ -121,6 +128,58 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
             )
 
     return peaks
+
+
+# --- Decline detection function ---
+def find_declines_rolling_3_years(
+    df, activity_type="edit", threshold_percentage=0.30, min_history_months=12
+):
+    if activity_type not in ACTIVITY_TYPES:
+        raise ValueError(f"Invalid activity type: {activity_type}")
+
+    value_col = ACTIVITY_TYPES[activity_type]["value_key"]
+    if df.empty:
+        return []
+
+    df = df[["timestamp", value_col]].copy()
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.to_period("M").dt.to_timestamp()
+    df = (
+        df.dropna(subset=[value_col])
+        .drop_duplicates(subset="timestamp", keep="last")
+        .sort_values("timestamp")
+        .reset_index(drop=True)
+    )
+
+    declines = []
+
+    for i in range(len(df)):
+        t_i = df.at[i, "timestamp"]
+        value_i = df.at[i, value_col]
+
+        window = df[
+            (df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] < t_i)
+        ][value_col]
+        if len(window) < min_history_months:
+            continue
+
+        baseline = window.mean()
+        if baseline <= 0:
+            continue
+
+        threshold = baseline * (1 - threshold_percentage)
+
+        if value_i <= threshold:
+            declines.append(
+                {
+                    "timestamp": t_i,
+                    "value": value_i,
+                    "baseline": baseline,
+                    "threshold": threshold,
+                    "percentage_decline": ((baseline - value_i) / baseline) * 100,
+                }
+            )
+
+    return declines
 
 
 # --- Format peaks for display ---
