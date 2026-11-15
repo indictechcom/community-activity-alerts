@@ -18,9 +18,9 @@
             <span class="font-semibold text-gray-900">Peak Information</span>
           </div>
           <div class="text-sm text-gray-700">
-            <p><strong>Project:</strong> {{ annotationData.project }}</p>
+            <p><strong>Project:</strong> {{ annotationData.project || '—' }}</p>
             <p><strong>Date:</strong> {{ formatDate(annotationData.timestamp) }}</p>
-            <p><strong>Type:</strong> {{ annotationData.peak_type === 'edit' ? 'Edit Count' : 'Editor Count' }}</p>
+            <p><strong>Type:</strong> {{ peakTypeLabel }}</p>
           </div>
         </div>
 
@@ -112,7 +112,12 @@ import axios from 'axios'
 
 const props = defineProps({
   isOpen: Boolean,
-  annotationData: Object
+  // Expected shape:
+  // { id, project, timestamp, peak_type: 'edit' | 'editor', description, relevant_link }
+  annotationData: {
+    type: Object,
+    default: () => ({})
+  }
 })
 const emit = defineEmits(['close', 'success'])
 
@@ -135,7 +140,17 @@ const canSubmit = computed(() => {
          !isSubmitting.value
 })
 
+const PEAK_TYPE_LABELS = {
+  edit: 'Edit Count',
+  editor: 'Editor Count'
+}
+
+const peakTypeLabel = computed(() => {
+  return PEAK_TYPE_LABELS[props.annotationData?.peak_type] || '—'
+})
+
 const formatDate = (dateString) => {
+  if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

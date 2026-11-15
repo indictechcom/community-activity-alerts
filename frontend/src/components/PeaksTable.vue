@@ -169,6 +169,11 @@ const formatDate = (dateString) => {
   })
 }
 
+// Edit count peaks carry an `edits` field; editor count peaks carry `editors`
+const getPeakType = (peak) => {
+  return peak.edits !== undefined ? 'edit' : 'editor'
+}
+
 // Get the appropriate count value (edits or editors)
 const getCountValue = (peak) => {
   return peak.edits !== undefined ? peak.edits : peak.editors
@@ -195,7 +200,7 @@ const fetchAnnotations = async () => {
   if (!props.peaks || props.peaks.length === 0) return
 
   const apiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'
-  const peakType = props.peaks[0].edits !== undefined ? 'edit' : 'editor'
+  const peakType = getPeakType(props.peaks.length > 0 ? props.peaks[0] : {})
 
   for (const peak of props.peaks) {
     try {
@@ -218,28 +223,21 @@ const fetchAnnotations = async () => {
 
 // Open annotation modal
 const openAnnotationModal = (peak) => {
-  const peakType = peak.edits !== undefined ? 'edit' : 'editor'
-
   selectedPeak.value = {
     project: props.project,
     timestamp: peak.timestamp,
-    peak_type: peakType
+    peak_type: getPeakType(peak)
   }
 
   showAnnotationModal.value = true
 }
 
 const openEditAnnotationModal = (peak, annotation) => {
-  const peakType = peak.edits !== undefined ? 'edit' : 'editor'
-
-  selectedPeak.value = {
-    project: props.project,
-    timestamp: peak.timestamp,
-    peak_type: peakType
-  }
-
   editAnnotationData.value = {
     id: annotation.id,
+    project: props.project,
+    timestamp: peak.timestamp,
+    peak_type: getPeakType(peak),
     description: annotation.description,
     relevant_link: annotation.relevant_link || ''
   }
