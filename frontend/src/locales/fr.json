@@ -1,0 +1,49 @@
+{
+	"@metadata": {
+		"authors": [
+			"RollyLif"
+		]
+	},
+	"navbar-title": "Alertes d'activité communautaire",
+	"navbar-home": "Accueil",
+	"navbar-edit-counts": "Nombre de modifications",
+	"navbar-editor-counts": "Nombre de contributeurs",
+	"navbar-watchlist": "Liste de suivi",
+	"navbar-loading": "Chargement...",
+	"navbar-login": "Connexion",
+	"navbar-logout": "Déconnexion",
+	"navbar-open-menu": "Ouvrir le menu",
+	"navbar-close-menu": "Fermer le menu",
+
+    "common-edits": "Modifications",
+    "common-editors": "Contributeurs",
+    "common-date": "Date",
+
+    "activitychart-title-default": "Aperçu de l'activité",
+    "activitychart-subtitle-default": "Nombre de modifications et pics d'activité sur la période sélectionnée.",
+    "activitychart-legend-alerts": "Alertes",
+    "activitychart-download-csv": "Télécharger le CSV",
+    "activitychart-download-image": "Télécharger l'image",
+    "activitychart-empty-title": "Aucune activité à afficher",
+    "activitychart-empty-text": "Sélectionnez un projet et une période pour afficher les statistiques.",
+    "activitychart-trace-alert": "Alerte de forte activité",
+    "activitychart-hover-peak": "Alerte de pic",
+    "activitychart-hover-edits": "Modifications : $1",
+    "activitychart-hover-date": "Date : $1",
+    "activitychart-axis-x": "Période",
+    "activitychart-axis-y": "Nombre de modifications",
+
+    "peakstable-title": "Alertes de pics d'activité",
+    "peakstable-subtitle": "Dates où le volume de modifications a dépassé la moyenne mobile.",
+    "peakstable-col-count": "Nombre",
+    "peakstable-col-rolling-mean": "Moyenne mobile",
+    "peakstable-col-threshold": "Seuil",
+    "peakstable-col-diff": "Écart (%)",
+    "peakstable-col-annotation": "Annotation",
+    "peakstable-annotation-view-source": "Voir la source",
+    "peakstable-annotation-by": "par $1",
+    "peakstable-annotation-edit": "Modifier",
+    "peakstable-annotation-add": "Ajouter une annotation",
+    "peakstable-empty-title": "Aucune anomalie détectée",
+    "peakstable-empty-text": "L'activité est dans les paramètres normaux pour cette période."
+}

@@ -13,5 +13,37 @@
 	"navbar-login": "Label of the button that logs the user in.",
 	"navbar-logout": "Label of the button that logs the user out.",
 	"navbar-open-menu": "Accessible label (screen readers) of the button that opens the mobile navigation menu.",
-	"navbar-close-menu": "Accessible label (screen readers) of the button that closes the mobile navigation menu."
+	"navbar-close-menu": "Accessible label (screen readers) of the button that closes the mobile navigation menu.",
+
+	"common-edits": "Label for the number of edits. Used as a chart legend, a tooltip label and a table column header when the data counts edits.",
+	"common-editors": "Table column header when the data counts editors (distinct users) instead of edits.",
+	"common-date": "Label for a date. Used as a table column header.",
+
+	"activitychart-title-default": "Default heading of the activity chart card, shown when no specific title is provided.",
+	"activitychart-subtitle-default": "Default description under the activity chart heading, shown when no specific subtitle is provided.",
+	"activitychart-legend-alerts": "Chart legend entry for the diamond markers showing months with unusually high activity.",
+	"activitychart-download-csv": "Label of the button that downloads the displayed chart data as a CSV file.",
+	"activitychart-download-image": "Label of the button that downloads the chart as a PNG image.",
+	"activitychart-empty-title": "Heading of the empty state shown when the chart has no data.",
+	"activitychart-empty-text": "Instruction shown under the empty chart heading, asking the user to choose a project and a date range.",
+	"activitychart-trace-alert": "Name of the data series made of high activity alert markers on the chart.",
+	"activitychart-hover-peak": "Bold heading of the tooltip shown when hovering an alert marker.",
+	"activitychart-hover-edits": "Tooltip line showing the edit count.Parameters:n* $1 - the value, inserted by the chart library (do not translate or alter).",
+	"activitychart-hover-date": "Tooltip line showing the date of an alert.Parameters:n* $1 - the date, inserted by the chart library (do not translate or alter).",
+	"activitychart-axis-x": "Title of the horizontal axis of the activity chart (months or dates).",
+	"activitychart-axis-y": "Title of the vertical axis of the activity chart (number of edits).",
+
+	"peakstable-title": "Heading of the table listing dates with peak activity alerts.",
+	"peakstable-subtitle": "Description under the peak table heading. A peak is a date where edit volume exceeded the rolling mean.",
+	"peakstable-col-count": "Fallback column header for the activity count, used when it is unknown whether edits or editors are counted.",
+	"peakstable-col-rolling-mean": "Column header: the rolling mean (moving average) of activity at the peak date.",
+	"peakstable-col-threshold": "Column header: the activity value above which a date is flagged as a peak.",
+	"peakstable-col-diff": "Column header: percentage difference between the peak value and the rolling mean. Keep it short.",
+	"peakstable-col-annotation": "Column header: note explaining the cause of a peak, written by a user.",
+	"peakstable-annotation-view-source": "Link text opening the source cited in an annotation, in a new tab.",
+	"peakstable-annotation-by": "Credit line under an annotation.Parameters: n* $1 - username of the person who submitted the annotation.",
+	"peakstable-annotation-edit": "Button label to edit an existing annotation. This is a verb.",
+	"peakstable-annotation-add": "Button label to add an annotation to a peak that has none.",
+	"peakstable-empty-title": "Heading of the empty state shown when no peaks were detected.",
+	"peakstable-empty-text": "Text under the empty state heading, saying activity was normal over the period."
 }
