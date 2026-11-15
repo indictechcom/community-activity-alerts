@@ -13,5 +13,37 @@
 	"navbar-login": "Login",
 	"navbar-logout": "Logout",
 	"navbar-open-menu": "Open menu",
-	"navbar-close-menu": "Close menu"
+	"navbar-close-menu": "Close menu",
+
+	"common-edits": "Edits",
+	"common-editors": "Editors",
+	"common-date": "Date",
+
+	"activitychart-title-default": "Activity Overview",
+	"activitychart-subtitle-default": "Edit counts and activity peaks over the selected period.",
+	"activitychart-legend-alerts": "Alerts",
+	"activitychart-download-csv": "Download CSV",
+	"activitychart-download-image": "Download image",
+	"activitychart-empty-title": "No Activity to Display",
+	"activitychart-empty-text": "Select a project and date range to view statistics.",
+	"activitychart-trace-alert": "High Activity Alert",
+	"activitychart-hover-peak": "Peak Alert",
+	"activitychart-hover-edits": "Edits: $1",
+	"activitychart-hover-date": "Date: $1",
+	"activitychart-axis-x": "Time Period",
+	"activitychart-axis-y": "Edit Count",
+
+	"peakstable-title": "Peak Activity Alerts",
+	"peakstable-subtitle": "Identified dates where edit volume exceeded the rolling mean.",
+	"peakstable-col-count": "Count",
+	"peakstable-col-rolling-mean": "Rolling Mean",
+	"peakstable-col-threshold": "Threshold",
+	"peakstable-col-diff": "% Diff",
+	"peakstable-col-annotation": "Annotation",
+	"peakstable-annotation-view-source": "View source",
+	"peakstable-annotation-by": "by $1",
+	"peakstable-annotation-edit": "Edit",
+	"peakstable-annotation-add": "Add annotation",
+	"peakstable-empty-title": "No anomalies detected",
+	"peakstable-empty-text": "Activity is within normal parameters for this period."
 }
