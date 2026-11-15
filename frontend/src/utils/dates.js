@@ -18,7 +18,7 @@ function calendarDate(year, month, day) {
   }
   return date
 }
-/*  */
+
 export function parseStoredDate(value) {
   if (value == null || value === '') return null
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value

@@ -66,11 +66,9 @@
 <script setup>
 import { ref, watch, computed, nextTick } from 'vue'
 import Plotly from 'plotly.js-dist-min'
-import { CdxIcon } from '@wikimedia/codex'
-import { cdxIconArrowUp, cdxIconArticle } from '@wikimedia/codex-icons'
-import { formatStoredDate } from '../utils/dates'
 import { CdxButton, CdxIcon } from '@wikimedia/codex'
 import { cdxIconArrowUp, cdxIconArticle, cdxIconDownload, cdxIconImage } from '@wikimedia/codex-icons'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   chartData: {
