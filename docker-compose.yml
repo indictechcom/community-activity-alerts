@@ -34,7 +34,7 @@ services:
         - comm-alerts
       environment:
         ENV : dev
-        SKIP_BACKFILL: "true"
+        SKIP_BACKFILL: "false"
       env_file:
         - ./backend/.env
 

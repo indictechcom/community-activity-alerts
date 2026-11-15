@@ -142,6 +142,7 @@ import { cdxIconAlert, cdxIconCheck, cdxIconAdd, cdxIconLinkExternal, cdxIconFla
 import AnnotationModal from './AnnotationModal.vue'
 import EditAnnotationModal from './EditAnnotationModal.vue'
 import axios from 'axios'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   peaks: {
@@ -160,9 +161,9 @@ const peakAnnotations = ref({})
 const editAnnotationData = ref(null)
 const showEditAnnotationModal = ref(false)
 
-// Formats a timestamp like "2025-02-01" into "Feb 1, 2025"
+// Formats a stored calendar date like "2025-02-01" into "Feb 1, 2025"
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return formatStoredDate(dateString, {
     year: 'numeric',
     month: 'short',
     day: 'numeric'

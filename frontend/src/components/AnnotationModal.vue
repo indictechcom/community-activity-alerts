@@ -124,6 +124,7 @@ import { ref, computed, watch } from 'vue'
 import { CdxIcon } from '@wikimedia/codex'
 import { cdxIconClose, cdxIconInfoFilled, cdxIconAlert, cdxIconError, cdxIconCheck } from '@wikimedia/codex-icons'
 import axios from 'axios'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   isOpen: {
@@ -158,7 +159,7 @@ const canSubmit = computed(() => {
 })
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return formatStoredDate(dateString, {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
