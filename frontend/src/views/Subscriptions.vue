@@ -338,6 +338,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
+import { formatStoredDate } from '../utils/dates'
 import { CdxButton, CdxIcon, CdxTextInput, CdxRadio, CdxMessage } from '@wikimedia/codex'
 import {
   cdxIconError,
@@ -631,8 +632,7 @@ const formatNotificationType = (type) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
+  return formatStoredDate(dateString, {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
