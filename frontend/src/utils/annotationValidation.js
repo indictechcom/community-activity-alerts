@@ -1,3 +1,6 @@
+// Annotation field validation (description and relevant link).
+// The backend enforces the same rules and messages; keep them in sync with
+// backend/annotation/validation.py
 
 export const DESCRIPTION_MIN_CHARS = 10;
 export const DESCRIPTION_MAX_WORDS = 50;
