@@ -36,7 +36,11 @@
       </cdx-field>
 
       <!-- Language Filter -->
-      <cdx-field :disabled="!filters.project">
+      <cdx-field
+        :disabled="!filters.project"
+        :status="languageError ? 'error' : 'default'"
+        :messages="{ error: languageError }"
+      >
         <template #label>
           <div class="flex items-center gap-2 mb-1">
             <cdx-icon :icon="cdxIconLanguage" size="small" class="text-gray-500" />
@@ -47,13 +51,18 @@
           <span v-if="!filters.project">Please select a project first</span>
         </template>
 
-        <cdx-select
-          v-model:selected="filters.language"
-          :menu-items="languageOptions"
-          default-label="Select Language"
-          placeholder="Choose a language..."
+        <cdx-combobox
+          v-model:selected="languageSearch"
+          :menu-items="filteredLanguageOptions"
+          :menu-config="{ visibleItemLimit: 8 }"
+          placeholder="Search for a language..."
           :disabled="!filters.project"
-        />
+          :status="languageError ? 'error' : 'default'"
+        >
+          <template #no-results>
+            No matching languages
+          </template>
+        </cdx-combobox>
       </cdx-field>
 
       <!-- Date Range Section -->
@@ -152,7 +161,8 @@ import {
   CdxButton, 
   CdxIcon, 
   CdxField, 
-  CdxSelect, 
+  CdxSelect,
+  CdxCombobox,
   CdxTextInput ,
 } from '@wikimedia/codex';
 
@@ -177,7 +187,7 @@ const projectNameMap = {
 };
 
 const filters = reactive({
-  project: '', language: '', dateStart: '', dateEnd: ''
+  project: '', language: null, dateStart: '', dateEnd: ''
 });
 
 const availableProjects = ref([]);
@@ -192,6 +202,25 @@ const projectOptions = computed(() => {
 
 const languageOptions = computed(() => {
   return availableLanguages.value.map(l => ({ value: l, label: l }));
+});
+
+const languageSearch = ref('');
+const languageError = ref('');
+
+const matchedLanguage = computed(() => {
+  const query = languageSearch.value.trim().toLowerCase();
+  return availableLanguages.value.find(l => l.toLowerCase() === query) ?? null;
+});
+
+const filteredLanguageOptions = computed(() => {
+  const query = languageSearch.value.trim().toLowerCase();
+  if (!query || matchedLanguage.value) return languageOptions.value;
+  return languageOptions.value.filter(o => o.label.toLowerCase().includes(query));
+});
+
+watch(matchedLanguage, (lang) => {
+  filters.language = lang;
+  if (lang) languageError.value = '';
 });
 
 const getFullLabel = (value) => {
@@ -238,7 +267,9 @@ const processCommunityData = (data) => {
 
 watch(() => filters.project, (newProject) => {
   // Clear language when project changes
-  filters.language = null; // CdxSelect expects null or value, empty string might behave differently
+  filters.language = null;
+  languageSearch.value = '';
+  languageError.value = '';
   availableLanguages.value = newProject ? (projectLanguageMap[newProject] || []).sort() : [];
 });
 
@@ -271,6 +302,10 @@ const applyQuickRange = (range) => {
 };
 
 const handleFetchData = () => {
+  if (filters.project && languageSearch.value.trim() && !filters.language) {
+    languageError.value = 'Please pick a language from the list.';
+    return;
+  }
   if (!filters.project || !filters.language || !filters.dateStart || !filters.dateEnd) {
     // You might want to use a CdxMessage or Dialog here instead of alert in the future
     alert("Please fill in all filter options.");
