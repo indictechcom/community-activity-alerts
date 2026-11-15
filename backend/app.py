@@ -90,6 +90,13 @@ def get_all_communities():
     return jsonify(languages)
 
 
+# --- Activity types supported by decline detection ---
+ACTIVITY_TYPES = {
+    "edit": {"table": "edit_counts", "column": "edit_count", "value_key": "edits"},
+    "editor": {"table": "editor_counts", "column": "editor_count", "value_key": "editors"},
+}
+
+
 # --- Peak detection function ---
 def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
     df = df.sort_values("timestamp").reset_index(drop=True)
@@ -121,6 +128,58 @@ def find_peaks_rolling_3_years(df, threshold_percentage=0.30):
             )
 
     return peaks
+
+
+# --- Decline detection function ---
+def find_declines_rolling_3_years(
+    df, activity_type="edit", threshold_percentage=0.30, min_history_months=12
+):
+    if activity_type not in ACTIVITY_TYPES:
+        raise ValueError(f"Invalid activity type: {activity_type}")
+
+    value_col = ACTIVITY_TYPES[activity_type]["value_key"]
+    if df.empty:
+        return []
+
+    df = df[["timestamp", value_col]].copy()
+    df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.to_period("M").dt.to_timestamp()
+    df = (
+        df.dropna(subset=[value_col])
+        .drop_duplicates(subset="timestamp", keep="last")
+        .sort_values("timestamp")
+        .reset_index(drop=True)
+    )
+
+    declines = []
+
+    for i in range(len(df)):
+        t_i = df.at[i, "timestamp"]
+        value_i = df.at[i, value_col]
+
+        window = df[
+            (df["timestamp"] >= t_i - pd.DateOffset(years=3)) & (df["timestamp"] < t_i)
+        ][value_col]
+        if len(window) < min_history_months:
+            continue
+
+        baseline = window.mean()
+        if baseline <= 0:
+            continue
+
+        threshold = baseline * (1 - threshold_percentage)
+
+        if value_i <= threshold:
+            declines.append(
+                {
+                    "timestamp": t_i,
+                    "value": value_i,
+                    "baseline": baseline,
+                    "threshold": threshold,
+                    "percentage_decline": ((baseline - value_i) / baseline) * 100,
+                }
+            )
+
+    return declines
 
 
 # --- Format peaks for display ---
@@ -437,6 +496,98 @@ def get_editor_activity_data():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# --- Activity Declines API Endpoint ---
+@app.route("/api/activity-declines")
+def get_activity_declines():
+    required = ["type", "language", "project_group", "datestart", "dateend"]
+    missing = [name for name in required if not request.args.get(name)]
+    if missing:
+        return jsonify({
+            "error": f"Missing required parameter(s): {', '.join(missing)}"
+        }), 400
+
+    activity_type = request.args.get("type")
+    project_group = request.args.get("project_group")
+    datestart = request.args.get("datestart")
+    dateend = request.args.get("dateend")
+
+    if activity_type not in ACTIVITY_TYPES:
+        return jsonify({
+            "error": f"Invalid type '{activity_type}'. Expected one of: {', '.join(ACTIVITY_TYPES)}"
+        }), 400
+
+    try:
+        start = datetime.strptime(datestart, "%b %Y").replace(day=1)
+        end_dt = datetime.strptime(dateend, "%b %Y")
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Expected 'Mon YYYY' (e.g. 'Jan 2024')"}), 400
+
+    last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
+    end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
+
+    if start > end:
+        return jsonify({"error": "datestart must be before dateend"}), 400
+
+    project = project_group
+    config = ACTIVITY_TYPES[activity_type]
+    value_key = config["value_key"]
+    # Fetch 3 extra years so the first months in range have a baseline
+    history_start = (pd.Timestamp(start) - pd.DateOffset(years=3)).to_pydatetime()
+
+    try:
+        conn = get_db_connection()
+
+        if activity_type == "editor":
+            project_without_org = project.replace('.org', '') if project.endswith('.org') else project
+            query = f"""
+                SELECT timestamp, {config['column']} AS {value_key}
+                FROM {config['table']}
+                WHERE (project = %s OR project = %s)
+                AND timestamp BETWEEN %s AND %s
+                ORDER BY timestamp ASC
+            """
+            params = (project, project_without_org, history_start, end)
+        else:
+            query = f"""
+                SELECT timestamp, {config['column']} AS {value_key}
+                FROM {config['table']}
+                WHERE project = %s AND timestamp BETWEEN %s AND %s
+                ORDER BY timestamp ASC
+            """
+            params = (project, history_start, end)
+
+        df = pd.read_sql(query, conn, params=params)
+        conn.close()
+
+        detected = find_declines_rolling_3_years(df, activity_type)
+
+        declines = [
+            {
+                "project": project,
+                "month": d["timestamp"].strftime("%Y-%m-%d"),
+                "value": int(d["value"]),
+                "baseline": round(float(d["baseline"]), 2),
+                "threshold": round(float(d["threshold"]), 2),
+                "percentage_decline": round(float(d["percentage_decline"]), 2),
+            }
+            for d in detected
+            if start <= d["timestamp"] <= end
+        ]
+
+        return jsonify({
+            "type": activity_type,
+            "project": project,
+            "datestart": datestart,
+            "dateend": dateend,
+            "declines": declines,
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # --- Editor Peak Label Management ---
 @app.route("/api/update_editor_peak_label", methods=["POST"])
 def update_editor_peak_label():
