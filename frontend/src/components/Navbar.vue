@@ -9,7 +9,7 @@
              <cdx-icon :icon="cdxIconLogo" size="medium" />
           </div>
           <h1 class="text-lg font-bold text-gray-900 tracking-tight">
-            Community Activity Alerts
+            {{ $i18n('navbar-title') }}
           </h1>
         </div>
 
@@ -25,19 +25,25 @@
                 class="nav-item"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Home' ? cdxIconLogo : link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Watchlist' ? cdxIconBell : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.icon" />
                 </template>
-                {{ link.name }}
+                {{ t(link.labelKey) }}
               </cdx-button>
             </router-link>
           </template>
 
           <div class="w-px h-6 bg-gray-200 mx-2"></div>
 
+
+          <div class="gap-2">
+            <button @click="changeLanguage('fr')">Français</button>
+            <button @click="changeLanguage('en')">English</button>
+          </div>
+
           <!-- Auth Section -->
           <div v-if="auth.loading" class="flex items-center gap-2 px-3">
             <span class="animate-pulse w-4 h-4 bg-gray-200 rounded-full"></span>
-            <span class="text-sm text-gray-500">Loading...</span>
+            <span class="text-sm text-gray-500">{{ t('navbar-loading') }}</span>
           </div>
 
           <div v-else class="flex items-center gap-2">
@@ -56,7 +62,7 @@
                 <template #icon>
                   <cdx-icon :icon="cdxIconLogOut" />
                 </template>
-                Logout
+                {{ t('navbar-logout') }}
               </cdx-button>
             </template>
 
@@ -70,7 +76,7 @@
                 <template #icon>
                   <cdx-icon :icon="cdxIconLogIn" />
                 </template>
-                Login
+                {{ t('navbar-login') }}
               </cdx-button>
             </template>
           </div>
@@ -119,16 +125,16 @@
                 class="w-full justify-start mb-1"
               >
                 <template #icon>
-                   <cdx-icon :icon="link.name === 'Home' ? cdxIconLogo : link.name === 'Edit Counts' ? cdxIconEdit : link.name === 'Watchlist' ? cdxIconBell : cdxIconUserGroup" />
+                   <cdx-icon :icon="link.icon" />
                 </template>
-                {{ link.name }}
+                {{ t(link.labelKey) }}
               </cdx-button>
           </router-link>
 
           <div class="border-t border-gray-100 my-2 pt-2">
             <!-- Mobile Auth -->
             <div v-if="auth.loading" class="px-4 py-2 text-sm text-gray-500">
-              Loading...
+              {{ t('navbar-loading') }}
             </div>
             <div v-else>
               <div v-if="auth.isAuthenticated" class="space-y-2">
@@ -143,7 +149,7 @@
                   @click="auth.logout"
                 >
                   <template #icon><cdx-icon :icon="cdxIconLogOut" /></template>
-                  Logout
+                  {{ t('navbar-logout') }}
                 </cdx-button>
               </div>
               <div v-else class="px-2">
@@ -154,7 +160,7 @@
                   @click="auth.login"
                 >
                   <template #icon><cdx-icon :icon="cdxIconLogIn" /></template>
-                  Login
+                  {{ t('navbar-login') }}
                 </cdx-button>
               </div>
             </div>
@@ -170,6 +176,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from "../stores/auth"
+import { useI18n } from "../i18n/useI18n"
 
 // 1. COMPONENT-WISE IMPORTS
 import { CdxButton, CdxIcon } from '@wikimedia/codex'
@@ -192,6 +199,7 @@ const cdxIconLogo = cdxIconWikitext
 
 const mobileMenuOpen = ref(false)
 const auth = useAuthStore()
+const {t} = useI18n();
 
 const userInitials = computed(() => {
   if (!auth.user) return 'U'
@@ -212,10 +220,10 @@ onMounted(async () => {
 })
 
 const navLinks = [
-  { name: 'Home', path: '/' },
-  { name: 'Edit Counts', path: '/edit-counts' },
-  { name: 'Editor Counts', path: '/editor-counts' },
-  { name: 'Watchlist', path: '/watchlist' }
+  { id: 'home',          labelKey: 'navbar-home',          path: '/',              icon: cdxIconLogo },
+  { id: 'edit-counts',   labelKey: 'navbar-edit-counts',   path: '/edit-counts',   icon: cdxIconEdit },
+  { id: 'editor-counts', labelKey: 'navbar-editor-counts', path: '/editor-counts', icon: cdxIconUserGroup },
+  { id: 'watchlist',     labelKey: 'navbar-watchlist',     path: '/watchlist',     icon: cdxIconBell }
 ]
 </script>
 
