@@ -35,6 +35,18 @@
           </div>
         </div>
       </div>
+
+      <!-- Export actions: both use the data currently shown in the chart -->
+      <div v-if="hasData" class="flex flex-wrap justify-end gap-2 mt-4">
+        <cdx-button @click="downloadCsv">
+          <cdx-icon :icon="cdxIconDownload" />
+          Download CSV
+        </cdx-button>
+        <cdx-button @click="downloadImage">
+          <cdx-icon :icon="cdxIconImage" />
+          Download image
+        </cdx-button>
+      </div>
     </div>
 
     <!-- 2. CHART AREA -->
@@ -57,6 +69,8 @@ import Plotly from 'plotly.js-dist-min'
 import { CdxIcon } from '@wikimedia/codex'
 import { cdxIconArrowUp, cdxIconArticle } from '@wikimedia/codex-icons'
 import { formatStoredDate } from '../utils/dates'
+import { CdxButton, CdxIcon } from '@wikimedia/codex'
+import { cdxIconArrowUp, cdxIconArticle, cdxIconDownload, cdxIconImage } from '@wikimedia/codex-icons'
 
 const props = defineProps({
   chartData: {
@@ -173,6 +187,75 @@ const renderChart = () => {
   }
 
   Plotly.newPlot(chartContainer.value, data, layout, config)
+}
+
+// --- EXPORT ---
+
+// File name built from the labels on screen, so it reflects the selected
+// project, language and date range, e.g.
+// "en-wikipedia-activity-from-2020-01-01-to-2024-12-31"
+const exportFilename = computed(() => {
+  const slug = `${props.title} ${props.subtitle}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return slug || 'activity-data'
+})
+
+// One row per month: date, activity value, and whether that month is an alert
+const buildCsv = () => {
+  const { lineTrace, peaksTrace } = props.chartData
+  const alertMonths = new Set((peaksTrace?.x || []).map(d => String(d).slice(0, 7)))
+
+  const rows = lineTrace.x.map((date, i) => {
+    const isAlert = alertMonths.has(String(date).slice(0, 7))
+    return [date, lineTrace.y[i] ?? '', isAlert ? 'yes' : 'no'].join(',')
+  })
+
+  return ['date,count,alert', ...rows].join('\r\n')
+}
+
+const downloadCsv = () => {
+  if (!hasData.value) return
+
+  // The BOM makes Excel read the file as UTF-8
+  const blob = new Blob(['\uFEFF' + buildCsv()], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${exportFilename.value}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+const downloadImage = () => {
+  const chart = chartContainer.value
+  if (!hasData.value || !chart) return
+
+  // Export the chart as rendered, but with a white background, a title and a
+  // legend, since the on-page versions of those live outside the Plotly canvas.
+  const figure = {
+    data: chart.data,
+    layout: {
+      ...chart.layout,
+      paper_bgcolor: '#fff',
+      plot_bgcolor: '#fff',
+      showlegend: true,
+      legend: { orientation: 'h', y: -0.2 },
+      title: { text: [props.title, props.subtitle].filter(Boolean).join(' – ') },
+      margin: { ...chart.layout.margin, t: 60 }
+    }
+  }
+
+  Plotly.downloadImage(figure, {
+    format: 'png',
+    filename: exportFilename.value,
+    width: chart.offsetWidth,
+    height: chart.offsetHeight,
+    scale: 2
+  })
 }
 
 watch(() => props.chartData, () => {
