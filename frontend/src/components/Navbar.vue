@@ -32,7 +32,11 @@
             </router-link>
           </template>
 
-          <div class="w-px h-6 bg-gray-200 mx-2"></div>
+          <!-- Selector shares the divider's flex item so it adds no extra gap -->
+          <div class="flex items-center">
+            <div class="w-px h-6 bg-gray-200 mx-2"></div>
+            <LanguageSelector compact />
+          </div>
 
           <!-- Auth Section -->
           <div v-if="auth.loading" class="flex items-center gap-2 px-3">
@@ -126,6 +130,8 @@
           </router-link>
 
           <div class="border-t border-gray-100 my-2 pt-2">
+            <LanguageSelector class="mb-2" />
+
             <!-- Mobile Auth -->
             <div v-if="auth.loading" class="px-4 py-2 text-sm text-gray-500">
               Loading...
@@ -170,6 +176,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from "../stores/auth"
+import LanguageSelector from './LanguageSelector.vue'
 
 // 1. COMPONENT-WISE IMPORTS
 import { CdxButton, CdxIcon } from '@wikimedia/codex'
