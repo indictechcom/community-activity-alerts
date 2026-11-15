@@ -311,7 +311,7 @@ community-activity-alerts/
 
 ## Internationalisation
 
-Interface text is not written directly in the Vue components. It lives in message files in `frontend/src/locales/`, in the [Banana i18n](https://github.com/wikimedia/banana-i18n) JSON format used by Wikimedia projects and by translatewiki.net. `frontend/src/i18n.js` loads those files and sets up [vue-banana-i18n](https://github.com/santhoshtr/vue-banana-i18n).
+Translatable interface text is being moved out of Vue components into message files in `frontend/src/locales/`, in the [Banana i18n](https://github.com/wikimedia/banana-i18n) JSON format used by Wikimedia projects and by translatewiki.net. `frontend/src/i18n.js` loads those files and sets up [vue-banana-i18n](https://github.com/santhoshtr/vue-banana-i18n).
 
 | File | Purpose |
 |---|---|
