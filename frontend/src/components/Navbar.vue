@@ -27,7 +27,7 @@
                 <template #icon>
                    <cdx-icon :icon="link.icon" />
                 </template>
-                {{ t(link.labelKey) }}
+                {{ $i18n(link.labelKey) }}
               </cdx-button>
             </router-link>
           </template>
@@ -38,16 +38,10 @@
             <LanguageSelector compact />
           </div>
 
-
-          <div class="gap-2">
-            <button @click="changeLanguage('fr')">Français</button>
-            <button @click="changeLanguage('en')">English</button>
-          </div>
-
           <!-- Auth Section -->
           <div v-if="auth.loading" class="flex items-center gap-2 px-3">
             <span class="animate-pulse w-4 h-4 bg-gray-200 rounded-full"></span>
-            <span class="text-sm text-gray-500">{{ t('navbar-loading') }}</span>
+            <span class="text-sm text-gray-500">{{ $i18n('navbar-loading') }}</span>
           </div>
 
           <div v-else class="flex items-center gap-2">
@@ -66,7 +60,7 @@
                 <template #icon>
                   <cdx-icon :icon="cdxIconLogOut" />
                 </template>
-                {{ t('navbar-logout') }}
+                {{ $i18n('navbar-logout') }}
               </cdx-button>
             </template>
 
@@ -80,7 +74,7 @@
                 <template #icon>
                   <cdx-icon :icon="cdxIconLogIn" />
                 </template>
-                {{ t('navbar-login') }}
+                {{ $i18n('navbar-login') }}
               </cdx-button>
             </template>
           </div>
@@ -91,7 +85,7 @@
           <cdx-button
             weight="quiet"
             @click="toggleMobileMenu"
-            :aria-label="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+            :aria-label="$i18n(mobileMenuOpen ? 'navbar-close-menu' : 'navbar-open-menu')"
           >
             <template #icon>
               <cdx-icon :icon="mobileMenuOpen ? cdxIconClose : cdxIconMenu" />
@@ -131,7 +125,7 @@
                 <template #icon>
                    <cdx-icon :icon="link.icon" />
                 </template>
-                {{ t(link.labelKey) }}
+                {{ $i18n(link.labelKey) }}
               </cdx-button>
           </router-link>
 
@@ -140,7 +134,7 @@
 
             <!-- Mobile Auth -->
             <div v-if="auth.loading" class="px-4 py-2 text-sm text-gray-500">
-              {{ t('navbar-loading') }}
+              {{ $i18n('navbar-loading') }}
             </div>
             <div v-else>
               <div v-if="auth.isAuthenticated" class="space-y-2">
@@ -155,7 +149,7 @@
                   @click="auth.logout"
                 >
                   <template #icon><cdx-icon :icon="cdxIconLogOut" /></template>
-                  {{ t('navbar-logout') }}
+                  {{ $i18n('navbar-logout') }}
                 </cdx-button>
               </div>
               <div v-else class="px-2">
@@ -166,7 +160,7 @@
                   @click="auth.login"
                 >
                   <template #icon><cdx-icon :icon="cdxIconLogIn" /></template>
-                  {{ t('navbar-login') }}
+                  {{ $i18n('navbar-login') }}
                 </cdx-button>
               </div>
             </div>
@@ -182,7 +176,6 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from "../stores/auth"
-import { useI18n } from "../i18n/useI18n"
 import LanguageSelector from './LanguageSelector.vue'
 
 // 1. COMPONENT-WISE IMPORTS
@@ -206,7 +199,6 @@ const cdxIconLogo = cdxIconWikitext
 
 const mobileMenuOpen = ref(false)
 const auth = useAuthStore()
-const {t} = useI18n();
 
 const userInitials = computed(() => {
   if (!auth.user) return 'U'
