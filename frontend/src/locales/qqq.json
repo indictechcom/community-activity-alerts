@@ -1,0 +1,17 @@
+{
+	"@metadata": {
+		"authors": [
+			"RollyLif"
+		]
+	},
+	"navbar-title": "Application title displayed at the top left of the navigation bar.",
+	"navbar-home": "Navigation link to the home page.",
+	"navbar-edit-counts": "Navigation link to the page showing edit counts.",
+	"navbar-editor-counts": "Navigation link to the page showing the number of editors.",
+	"navbar-watchlist": "Navigation link to the user's watchlist page.",
+	"navbar-loading": "Text shown in the navigation bar while the user's login status is being checked.",
+	"navbar-login": "Label of the button that logs the user in.",
+	"navbar-logout": "Label of the button that logs the user out.",
+	"navbar-open-menu": "Accessible label (screen readers) of the button that opens the mobile navigation menu.",
+	"navbar-close-menu": "Accessible label (screen readers) of the button that closes the mobile navigation menu."
+}

@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../i18n";
 
-export const DEFAULT_LOCALE = "en";
+// Interface languages the user can pick from, as BCP 47 codes: the ones that
+// have a message catalogue in src/locales.
+export { DEFAULT_LOCALE, SUPPORTED_LOCALES };
 export const LOCALE_STORAGE_KEY = "community-alerts:locale";
-
-// Interface languages the user can pick from, as BCP 47 codes. The i18n setup
-// owns this list: add a code here when its message catalogue is added.
-export const SUPPORTED_LOCALES = ["en"];
 
 export function isSupportedLocale(code) {
     return SUPPORTED_LOCALES.includes(code);
@@ -40,8 +39,8 @@ function saveLocale(code) {
     }
 }
 
-// Single source of truth for the active interface locale. The i18n library
-// should follow `locale` (e.g. watch it and set its own active locale).
+// Single source of truth for the active interface locale. Banana follows
+// `locale` (see App.vue).
 export const useLocaleStore = defineStore("locale", () => {
     const locale = ref(readSavedLocale());
 
