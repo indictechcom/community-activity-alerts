@@ -88,7 +88,7 @@
             size="medium"
             class="quick-range-btn"
             :class="{ 'is-active': option.value === activeRange }"
-            :title="getFullLabel(option.value)"
+            :title="option.tooltip"
           >
             {{ option.label }}
           </cdx-button>
@@ -102,7 +102,7 @@
           @click="handleFetchData" 
           action="progressive" 
           weight="primary" 
-          class="w-full justify-center"
+          class="w-full justify-center"   
           size="large"
         >
           <template #icon>
@@ -249,11 +249,35 @@ const formatApiDate = (dateString) => {
 };
 
 const quickRanges = [
-  { label: 'Last 3m', value: '4m' }, { label: 'Last 6m', value: '7m' },
-  { label: 'YTD', value: 'ytd' }, { label: 'All', value: 'all' }
+  {
+    label: 'Last 3m',
+    value: '3m',
+    tooltip: 'Show activity from the last 3 months'
+  },
+  {
+    label: 'Last 6m',
+    value: '6m',
+    tooltip: 'Show activity from the last 6 months'
+  },
+  {
+    label: 'YTD',
+    value: 'ytd',
+    tooltip: 'Show activity from the beginning of this year'
+  },
+  {
+    label: 'All',
+    value: 'all',
+    tooltip: 'Show all available activity'
+  }
 ];
 
+
+const activeRange = ref('all');
+
+
 const applyQuickRange = (range) => {
+  activeRange.value = range;
+
     const now = new Date();
     let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
