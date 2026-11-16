@@ -31,14 +31,21 @@
           </label>
           <textarea
             v-model="description"
-            @input="updateWordCount"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border rounded-lg focus:ring-2"
+            :class="showDescriptionError
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'"
+            :aria-invalid="showDescriptionError"
+            aria-describedby="edit-annotation-description-help"
             rows="4"
             maxlength="500"
             placeholder="Provide context about this spike (max 50 words)"
           ></textarea>
-          <div class="flex justify-between items-center mt-1">
-            <p class="text-xs text-gray-500">
+          <div class="flex justify-between items-center gap-4 mt-1">
+            <p v-if="showDescriptionError" id="edit-annotation-description-help" class="text-xs text-red-600">
+              {{ descriptionValidation.error }}
+            </p>
+            <p v-else id="edit-annotation-description-help" class="text-xs text-gray-500">
               Briefly explain what caused this spike or provide relevant context.
             </p>
             <span 
@@ -58,11 +65,19 @@
           <input
             v-model="relevantLink"
             type="url"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="https://example.com/relevant-page"
+            class="w-full px-3 py-2 border rounded-lg focus:ring-2"
+            :class="showLinkError
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'"
+            :aria-invalid="showLinkError"
+            aria-describedby="edit-annotation-link-help"
+            placeholder="https://meta.wikimedia.org/wiki/Example"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Add a link to a relevant discussion, event page, or documentation.
+          <p v-if="showLinkError" id="edit-annotation-link-help" class="text-xs text-red-600 mt-1">
+            {{ linkValidation.error }}
+          </p>
+          <p v-else id="edit-annotation-link-help" class="text-xs text-gray-500 mt-1">
+            Add a link to a relevant discussion, event page, or documentation on a Wikimedia wiki.
           </p>
         </div>
 
@@ -95,7 +110,7 @@
         <button
           @click="submitEdit"
           class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="!canSubmit || isSubmitting"
+          :disabled="isSubmitting"
         >
           {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
         </button>
@@ -119,22 +134,18 @@ const emit = defineEmits(['close', 'success'])
 
 const description = ref('')
 const relevantLink = ref('')
-const wordCount = ref(0)
 const errorMessage = ref('')
 const successMessage = ref('')
 const isSubmitting = ref(false)
+const submitAttempted = ref(false)
 
-const updateWordCount = () => {
-  const text = description.value.trim()
-  wordCount.value = text ? text.split(/\s+/).length : 0
-}
+const wordCount = computed(() => countWords(description.value))
 
-const canSubmit = computed(() => {
-  return description.value.trim().length >= 10 && 
-         wordCount.value > 0 && 
-         wordCount.value <= 50 &&
-         !isSubmitting.value
-})
+const descriptionValidation = computed(() => validateDescription(description.value))
+const showDescriptionError = computed(() => submitAttempted.value && !descriptionValidation.value.valid)
+
+const linkValidation = computed(() => validateWikimediaLink(relevantLink.value))
+const showLinkError = computed(() => submitAttempted.value && !linkValidation.value.valid)
 
 const formatDate = (dateString) => {
   return formatStoredDate(dateString, {
@@ -147,8 +158,9 @@ const formatDate = (dateString) => {
 const submitEdit = async () => {
   errorMessage.value = ''
   successMessage.value = ''
-  if (!canSubmit.value) {
-    errorMessage.value = 'Please check all requirements before saving.'
+  submitAttempted.value = true
+  if (!descriptionValidation.value.valid || !linkValidation.value.valid) {
+    errorMessage.value = FORM_ERROR_MESSAGE
     return
   }
   isSubmitting.value = true
@@ -159,7 +171,7 @@ const submitEdit = async () => {
       {
         annotation_id: props.annotationData.id,
         description: description.value.trim(),
-        relevant_link: relevantLink.value.trim() || null
+        relevant_link: relevantLink.value.trim()
       },
       { withCredentials: true }
     )
@@ -185,7 +197,7 @@ const close = () => {
   if (!isSubmitting.value) {
     description.value = ''
     relevantLink.value = ''
-    wordCount.value = 0
+    submitAttempted.value = false
     errorMessage.value = ''
     successMessage.value = ''
     emit('close')
@@ -197,7 +209,7 @@ watch(() => props.isOpen, (isOpen) => {
   if (isOpen && props.annotationData) {
     description.value = props.annotationData.description || ''
     relevantLink.value = props.annotationData.relevant_link || ''
-    wordCount.value = description.value.trim() ? description.value.trim().split(/\s+/).length : 0
+    submitAttempted.value = false
     errorMessage.value = ''
     successMessage.value = ''
   }

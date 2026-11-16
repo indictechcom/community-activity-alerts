@@ -11,8 +11,19 @@ from annotation.annotation_utils import (
     send_reviewer_notification,
     get_annotation_for_peak
 )
+from annotation.validation import validate_description, validate_relevant_link
 
 logger = logging.getLogger(__name__)
+
+
+def get_json_body():
+    """Return the request's JSON object, or None if the body is missing or not a JSON object."""
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else None
+
+
+def invalid_body_response():
+    return jsonify({"error": "Request body must be a JSON object"}), 400
 
 def create_annotation_blueprint(mwo_auth):
     annotation_bp = Blueprint('annotations', __name__)
@@ -29,27 +40,28 @@ def create_annotation_blueprint(mwo_auth):
             return jsonify({"error": "Authentication required"}), 401
         
         username = current_user
-        data = request.json
-        
+        data = get_json_body()
+        if data is None:
+            return invalid_body_response()
+
         # Validate required fields
         required_fields = ['project', 'timestamp', 'peak_type', 'description']
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         project = data['project']
         timestamp = data['timestamp']
         peak_type = data['peak_type']
-        description = data['description'].strip()
-        relevant_link = data.get('relevant_link', '').strip() or None
         
-        # Validate description length (50 words max)
-        word_count = len(description.split())
-        if word_count > 50:
-            return jsonify({"error": f"Description exceeds 50 words (current: {word_count})"}), 400
-        
-        if len(description) < 10:
-            return jsonify({"error": "Description too short (minimum 10 characters)"}), 400
-        
+        # Validate description
+        description, error = validate_description(data.get('description'))
+        if error:
+            return jsonify({"error": error}), 400
+
+        relevant_link, error = validate_relevant_link(data.get('relevant_link'))
+        if error:
+            return jsonify({"error": error}), 400
+
         # Validate peak_type
         if peak_type not in ['edit', 'editor']:
             return jsonify({"error": "Invalid peak_type"}), 400
@@ -204,16 +216,26 @@ def create_annotation_blueprint(mwo_auth):
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
         
-        data = request.json
+        data = get_json_body()
+        if data is None:
+            return invalid_body_response()
         annotation_id = data.get('annotation_id')
         action = data.get('action')  # 'approve', 'reject', 'edit'
-        
+
         if not (annotation_id and action):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         if action not in ['approve', 'reject', 'edit']:
             return jsonify({"error": "Invalid action"}), 400
-        
+
+        if action == 'edit':
+            edited_description, error = validate_description(data.get('edited_description'))
+            if error:
+                return jsonify({"error": error}), 400
+            edited_link, error = validate_relevant_link(data.get('edited_link'))
+            if error:
+                return jsonify({"error": error}), 400
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -297,20 +319,7 @@ def create_annotation_blueprint(mwo_auth):
                 message = "Annotation rejected"
                 
             elif action == 'edit':
-                # Edit and approve annotation
-                edited_description = data.get('edited_description', '').strip()
-                edited_link = data.get('edited_link', '').strip() or None
-                
-                if not edited_description:
-                    conn.close()
-                    return jsonify({"error": "Edited description required"}), 400
-                
-                # Validate edited description length
-                word_count = len(edited_description.split())
-                if word_count > 50:
-                    conn.close()
-                    return jsonify({"error": f"Description exceeds 50 words (current: {word_count})"}), 400
-                
+                # Edit and approve annotation (fields validated above)
                 cursor.execute(
                     """
                     UPDATE peak_annotations
@@ -514,16 +523,26 @@ def create_annotation_blueprint(mwo_auth):
         if not is_reviewer(username):
             return jsonify({"error": "Reviewer privileges required"}), 403
         
-        data = request.json
+        data = get_json_body()
+        if data is None:
+            return invalid_body_response()
         report_id = data.get('report_id')
         action = data.get('action')  # 'dismiss', 'edit', 'remove'
-        
+
         if not (report_id and action):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         if action not in ['dismiss', 'edit', 'remove']:
             return jsonify({"error": "Invalid action"}), 400
-        
+
+        if action == 'edit':
+            edited_description, error = validate_description(data.get('edited_description'))
+            if error:
+                return jsonify({"error": error}), 400
+            edited_link, error = validate_relevant_link(data.get('edited_link'))
+            if error:
+                return jsonify({"error": error}), 400
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -561,14 +580,7 @@ def create_annotation_blueprint(mwo_auth):
                 message = "Report dismissed"
                 
             elif action == 'edit':
-                # Edit annotation
-                edited_description = data.get('edited_description', '').strip()
-                edited_link = data.get('edited_link', '').strip() or None
-                
-                if not edited_description:
-                    conn.close()
-                    return jsonify({"error": "Edited description required"}), 400
-                
+                # Edit annotation (fields validated above)
                 cursor.execute(
                     """
                     UPDATE peak_annotations
@@ -676,23 +688,21 @@ def create_annotation_blueprint(mwo_auth):
             return jsonify({"error": "Authentication required"}), 401
 
         username = current_user
-        data = request.json
+        data = get_json_body()
+        if data is None:
+            return invalid_body_response()
 
         annotation_id = data.get('annotation_id')
-        new_description = data.get('description', '').strip()
-        new_link = data.get('relevant_link', '').strip() or None
-
         if not annotation_id:
             return jsonify({"error": "Missing annotation_id"}), 400
-        if not new_description:
-            return jsonify({"error": "Description required"}), 400
 
-        # Validate description length (50 words max)
-        word_count = len(new_description.split())
-        if word_count > 50:
-            return jsonify({"error": f"Description exceeds 50 words (current: {word_count})"}), 400
-        if len(new_description) < 10:
-            return jsonify({"error": "Description too short (minimum 10 characters)"}), 400
+        new_description, error = validate_description(data.get('description'))
+        if error:
+            return jsonify({"error": error}), 400
+
+        new_link, error = validate_relevant_link(data.get('relevant_link'))
+        if error:
+            return jsonify({"error": error}), 400
 
         # Check user's global edit count
         edit_count = get_user_edit_count(username)
