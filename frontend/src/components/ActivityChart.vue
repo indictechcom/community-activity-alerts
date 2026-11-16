@@ -27,7 +27,7 @@
         <div v-if="hasData" class="flex gap-4 text-xs font-medium">
           <div class="flex items-center gap-2">
             <span class="w-3 h-1 bg-[#36c] rounded-full"></span>
-            <span class="text-gray-600">Edits</span>
+            <span class="text-gray-600">{{ metricLabel }}</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 bg-green-500 transform rotate-45"></span>
@@ -83,6 +83,16 @@ const props = defineProps({
   subtitle: {
     type: String,
     default: ''
+  },
+  // Legend and tooltip name for the series, e.g. "Edits" or "Editors"
+  metricLabel: {
+    type: String,
+    default: 'Edits'
+  },
+  // Y-axis title, e.g. "Edit Count" or "Editor Count"
+  countLabel: {
+    type: String,
+    default: 'Edit Count'
   }
 })
 
@@ -117,12 +127,12 @@ const renderChart = () => {
     {
       ...lineTrace,
       mode: lineMode,
-      name: 'Edits',
+      name: props.metricLabel,
       // Standard Wiki Blue Line
       line: { color: COLOR_PROGRESSIVE, width: 2, shape: 'spline' },
       marker: { color: COLOR_PROGRESSIVE, size: 6 },
       customdata: lineTrace.x.map(hoverDate),
-      hovertemplate: '<b>%{customdata}</b><br>Edits: %{y}<extra></extra>'
+      hovertemplate: `<b>%{customdata}</b><br>${props.metricLabel}: %{y}<extra></extra>`
     },
     {
       ...peaksTrace,
@@ -137,7 +147,7 @@ const renderChart = () => {
       textposition: 'top center',
       textfont: { color: COLOR_DESTRUCTIVE, size: 11, family: 'sans-serif' },
       customdata: (peaksTrace.x || []).map(hoverDate),
-      hovertemplate: '<b>Peak Alert</b><br>Date: %{customdata}<br>Edits: %{y}<extra></extra>'
+      hovertemplate: `<b>Peak Alert</b><br>Date: %{customdata}<br>${props.metricLabel}: %{y}<extra></extra>`
     }
   ]
 
@@ -162,7 +172,7 @@ const renderChart = () => {
       zeroline: false
     },
     yaxis: {
-      title: 'Edit Count',
+      title: props.countLabel,
       gridcolor: COLOR_GRID,
       linecolor: COLOR_GRID,
       tickfont: { color: COLOR_SUBTLE },
@@ -256,7 +266,7 @@ const downloadImage = () => {
   })
 }
 
-watch(() => props.chartData, () => {
+watch(() => [props.chartData, props.metricLabel, props.countLabel], () => {
   if (hasData.value) {
     nextTick(() => {
       renderChart()
