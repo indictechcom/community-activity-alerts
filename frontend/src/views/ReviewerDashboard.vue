@@ -96,7 +96,7 @@
                 <span class="text-sm text-gray-500">{{ annotation.project }}</span>
               </div>
               <p class="text-sm text-gray-600">
-                <strong>Date:</strong> {{ formatDate(annotation.timestamp) }}
+                <strong>Date:</strong> {{ formatPeakDate(annotation.timestamp) }}
               </p>
               <p class="text-sm text-gray-600">
                 <strong>Submitted by:</strong> {{ annotation.submitted_by }}
@@ -244,6 +244,7 @@ import { cdxIconArticle, cdxIconFlag, cdxIconCheck, cdxIconEdit, cdxIconClose } 
 import ReviewAnnotationModal from '../components/ReviewAnnotationModal.vue'
 import ReviewReportModal from '../components/ReviewReportModal.vue'
 import axios from 'axios'
+import { formatStoredDate, formatStoredDateTime } from '../utils/dates'
 import Navbar from '../components/Navbar.vue'
 
 const activeTab = ref('annotations')
@@ -262,8 +263,16 @@ const selectedReport = ref(null)
 const reviewAction = ref('')
 const reportReviewAction = ref('')
 
+const formatPeakDate = (dateString) => {
+  return formatStoredDate(dateString, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return formatStoredDateTime(dateString, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

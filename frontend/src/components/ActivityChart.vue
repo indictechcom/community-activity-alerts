@@ -27,7 +27,7 @@
         <div v-if="hasData" class="flex gap-4 text-xs font-medium">
           <div class="flex items-center gap-2">
             <span class="w-3 h-1 bg-[#36c] rounded-full"></span>
-            <span class="text-gray-600">Edits</span>
+            <span class="text-gray-600">{{ metricLabel }}</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 bg-green-500 transform rotate-45"></span>
@@ -68,6 +68,7 @@ import { ref, watch, computed, nextTick } from 'vue'
 import Plotly from 'plotly.js-dist-min'
 import { CdxButton, CdxIcon } from '@wikimedia/codex'
 import { cdxIconArrowUp, cdxIconArticle, cdxIconDownload, cdxIconImage } from '@wikimedia/codex-icons'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   chartData: {
@@ -82,6 +83,16 @@ const props = defineProps({
   subtitle: {
     type: String,
     default: ''
+  },
+  // Legend and tooltip name for the series, e.g. "Edits" or "Editors"
+  metricLabel: {
+    type: String,
+    default: 'Edits'
+  },
+  // Y-axis title, e.g. "Edit Count" or "Editor Count"
+  countLabel: {
+    type: String,
+    default: 'Edit Count'
   }
 })
 
@@ -99,6 +110,11 @@ const renderChart = () => {
 
   const { lineTrace, peaksTrace } = props.chartData
   const lineMode = lineTrace.x.length === 1 ? 'lines+markers' : lineTrace.mode;
+  const hoverDate = (value) => formatStoredDate(value, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 
   // CODEX COLORS (Hardcoded hex values matching standard Wiki tokens)
   const COLOR_BASE = '#202122';
@@ -111,11 +127,12 @@ const renderChart = () => {
     {
       ...lineTrace,
       mode: lineMode,
-      name: 'Edits',
+      name: props.metricLabel,
       // Standard Wiki Blue Line
       line: { color: COLOR_PROGRESSIVE, width: 2, shape: 'spline' },
       marker: { color: COLOR_PROGRESSIVE, size: 6 },
-      hovertemplate: '<b>%{x}</b><br>Edits: %{y}<extra></extra>'
+      customdata: lineTrace.x.map(hoverDate),
+      hovertemplate: `<b>%{customdata}</b><br>${props.metricLabel}: %{y}<extra></extra>`
     },
     {
       ...peaksTrace,
@@ -129,7 +146,8 @@ const renderChart = () => {
       text: peaksTrace.y.map(val => `${val}`),
       textposition: 'top center',
       textfont: { color: COLOR_DESTRUCTIVE, size: 11, family: 'sans-serif' },
-      hovertemplate: '<b>Peak Alert</b><br>Date: %{x}<br>Edits: %{y}<extra></extra>'
+      customdata: (peaksTrace.x || []).map(hoverDate),
+      hovertemplate: `<b>Peak Alert</b><br>Date: %{customdata}<br>${props.metricLabel}: %{y}<extra></extra>`
     }
   ]
 
@@ -144,13 +162,17 @@ const renderChart = () => {
     },
     xaxis: {
       title: 'Time Period',
+      type: 'date',
+      // Monthly ticks stay on the stored month. Plotly reads these date
+      // strings as calendar days, and the hover text is formatted separately.
+      tickformat: '%b %Y',
       gridcolor: COLOR_GRID,
       linecolor: COLOR_GRID,
       tickfont: { color: COLOR_SUBTLE },
       zeroline: false
     },
     yaxis: {
-      title: 'Edit Count',
+      title: props.countLabel,
       gridcolor: COLOR_GRID,
       linecolor: COLOR_GRID,
       tickfont: { color: COLOR_SUBTLE },
@@ -244,7 +266,7 @@ const downloadImage = () => {
   })
 }
 
-watch(() => props.chartData, () => {
+watch(() => [props.chartData, props.metricLabel, props.countLabel], () => {
   if (hasData.value) {
     nextTick(() => {
       renderChart()
