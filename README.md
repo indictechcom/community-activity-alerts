@@ -294,6 +294,8 @@ community-activity-alerts/
 │
 ├── frontend/
 │   └── src/
+│       ├── i18n.js
+│       └── locales/
 │
 ├── docker-compose.yml
 └── init.sql
@@ -306,6 +308,58 @@ community-activity-alerts/
 - **Database:** MariaDB database that stores monthly statistics, detected peaks, annotations, and subscriptions.
 - **Cron:** Scripts that fetch Wikimedia statistics, detect activity peaks, and handle scheduled notifications.
 - **Migrations:** SQL files in `backend/migrations/` that create and update the database schema.
+
+## Internationalisation
+
+Translatable interface text is being moved out of Vue components into message files in `frontend/src/locales/`, in the [Banana i18n](https://github.com/wikimedia/banana-i18n) JSON format used by Wikimedia projects and by translatewiki.net. `frontend/src/i18n.js` loads those files and sets up [vue-banana-i18n](https://github.com/santhoshtr/vue-banana-i18n).
+
+| File | Purpose |
+|---|---|
+| `en.json` | English messages. English is the default language, and the fallback when a message has no translation. |
+| `qqq.json` | Message documentation for translators. It is not a language and is not loaded by the application. |
+| `<language code>.json` | Messages of another language, for example `fr.json`. |
+
+### Use a message in a component
+
+In a template, call `$i18n` with the message key:
+
+```vue
+<h1>{{ $i18n('navbar-title') }}</h1>
+```
+
+In `<script setup>`, call `useI18n` and use its `i18n` method, which takes the same arguments. Wrap the call in `computed` so the text follows the selected language:
+
+```js
+import { computed } from 'vue'
+import { useI18n } from '../i18n'
+
+const banana = useI18n()
+const title = computed(() => banana.i18n('navbar-title'))
+```
+
+### Add or update a message
+
+1. Add the key and its English text to `en.json`. Keys are lowercase, with hyphens between words, and start with the part of the interface they belong to, for example `navbar-`.
+2. Add the same key to `qqq.json`, with a sentence that says where the message appears and what each parameter contains.
+3. Use the key in the component.
+
+Values that change go in parameters, written `$1`, `$2` and so on, and are passed after the key:
+
+```json
+"peaks-found": "$1 {{PLURAL:$1|peak|peaks}} found for $2"
+```
+
+```vue
+{{ $i18n('peaks-found', peaks.length, project) }}
+```
+
+Write each message as a whole sentence. Do not build a sentence by joining several messages, because word order differs between languages. Do not translate data such as project names, usernames, or values returned by the API.
+
+To change the wording of an English message, edit `en.json`. If the meaning changes, use a new key, so that existing translations of the old meaning are not kept.
+
+### Add a language
+
+Add a file named after the language code to `frontend/src/locales/`, for example `sw.json`, with the keys of `en.json` and their translations. No code change is needed: the file is loaded with the others and the language appears in the selector of the navigation bar. A message that is missing from the file is shown in English.
 
 ## Contributing
 

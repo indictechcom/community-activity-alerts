@@ -33,13 +33,20 @@
             </label>
             <textarea
               v-model="editedDescription"
-              @input="updateWordCount"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2"
+              :class="showDescriptionError
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'"
+              :aria-invalid="showDescriptionError"
+              aria-describedby="review-annotation-description-help"
               rows="4"
               maxlength="500"
             ></textarea>
-            <div class="flex justify-between items-center mt-1">
-              <p class="text-xs text-gray-500">Edit the description as needed</p>
+            <div class="flex justify-between items-center gap-4 mt-1">
+              <p v-if="showDescriptionError" id="review-annotation-description-help" class="text-xs text-red-600">
+                {{ descriptionValidation.error }}
+              </p>
+              <p v-else id="review-annotation-description-help" class="text-xs text-gray-500">Edit the description as needed</p>
               <span 
                 class="text-xs font-medium"
                 :class="wordCount > 50 ? 'text-red-600' : 'text-gray-500'"
@@ -56,8 +63,20 @@
             <input
               v-model="editedLink"
               type="url"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2"
+              :class="showLinkError
+                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'"
+              :aria-invalid="showLinkError"
+              aria-describedby="review-annotation-link-help"
+              placeholder="https://meta.wikimedia.org/wiki/Example"
             />
+            <p v-if="showLinkError" id="review-annotation-link-help" class="text-xs text-red-600 mt-1">
+              {{ linkValidation.error }}
+            </p>
+            <p v-else id="review-annotation-link-help" class="text-xs text-gray-500 mt-1">
+              Must be a link to a Wikimedia wiki.
+            </p>
           </div>
         </div>
 
@@ -108,7 +127,7 @@
             action === 'edit' ? 'bg-blue-600 hover:bg-blue-700' :
             'bg-red-600 hover:bg-red-700'
           ]"
-          :disabled="!canSubmit || isSubmitting"
+          :disabled="isSubmitting"
         >
           {{ isSubmitting ? 'Processing...' : action === 'approve' ? 'Approve' : action === 'edit' ? 'Edit & Approve' : 'Reject' }}
         </button>
@@ -122,6 +141,12 @@ import { ref, computed, watch } from 'vue'
 import { CdxIcon } from '@wikimedia/codex'
 import { cdxIconClose, cdxIconError, cdxIconCheck } from '@wikimedia/codex-icons'
 import axios from 'axios'
+import {
+  countWords,
+  validateDescription,
+  validateWikimediaLink,
+  FORM_ERROR_MESSAGE
+} from '../utils/annotationValidation'
 
 const props = defineProps({
   isOpen: {
@@ -143,33 +168,30 @@ const emit = defineEmits(['close', 'success'])
 const editedDescription = ref('')
 const editedLink = ref('')
 const reviewNotes = ref('')
-const wordCount = ref(0)
 const errorMessage = ref('')
 const successMessage = ref('')
 const isSubmitting = ref(false)
+const submitAttempted = ref(false)
 
-const updateWordCount = () => {
-  const text = editedDescription.value.trim()
-  wordCount.value = text ? text.split(/\s+/).length : 0
-}
+const wordCount = computed(() => countWords(editedDescription.value))
 
-const canSubmit = computed(() => {
-  if (isSubmitting.value) return false
-  if (props.action === 'edit') {
-    return editedDescription.value.trim().length >= 10 && 
-           wordCount.value > 0 && 
-           wordCount.value <= 50
-  }
-  return true
-})
+const descriptionValidation = computed(() => validateDescription(editedDescription.value))
+const showDescriptionError = computed(() => submitAttempted.value && !descriptionValidation.value.valid)
+
+const linkValidation = computed(() => validateWikimediaLink(editedLink.value))
+const showLinkError = computed(() => submitAttempted.value && !linkValidation.value.valid)
 
 const submitReview = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (!canSubmit.value) {
-    errorMessage.value = 'Please check all requirements before submitting.'
-    return
+  // Only the "edit" action changes the annotation's content, so only it is validated
+  if (props.action === 'edit') {
+    submitAttempted.value = true
+    if (!descriptionValidation.value.valid || !linkValidation.value.valid) {
+      errorMessage.value = FORM_ERROR_MESSAGE
+      return
+    }
   }
 
   isSubmitting.value = true
@@ -185,7 +207,7 @@ const submitReview = async () => {
 
     if (props.action === 'edit') {
       payload.edited_description = editedDescription.value.trim()
-      payload.edited_link = editedLink.value.trim() || null
+      payload.edited_link = editedLink.value.trim()
     }
 
     const response = await axios.post(
@@ -222,7 +244,7 @@ const close = () => {
     editedDescription.value = ''
     editedLink.value = ''
     reviewNotes.value = ''
-    wordCount.value = 0
+    submitAttempted.value = false
     errorMessage.value = ''
     successMessage.value = ''
     emit('close')
@@ -236,7 +258,7 @@ watch(() => props.isOpen, (newVal) => {
     reviewNotes.value = ''
     errorMessage.value = ''
     successMessage.value = ''
-    updateWordCount()
+    submitAttempted.value = false
   }
 })
 </script>
