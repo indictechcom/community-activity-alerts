@@ -139,12 +139,7 @@ import { ref, computed, watch } from 'vue'
 import { CdxIcon } from '@wikimedia/codex'
 import { cdxIconClose, cdxIconInfoFilled, cdxIconAlert, cdxIconError, cdxIconCheck } from '@wikimedia/codex-icons'
 import axios from 'axios'
-import {
-  countWords,
-  validateDescription,
-  validateWikimediaLink,
-  FORM_ERROR_MESSAGE
-} from '../utils/annotationValidation'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   isOpen: {
@@ -175,7 +170,7 @@ const linkValidation = computed(() => validateWikimediaLink(relevantLink.value))
 const showLinkError = computed(() => submitAttempted.value && !linkValidation.value.valid)
 
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return formatStoredDate(dateString, {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
