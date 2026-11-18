@@ -102,7 +102,7 @@
           @click="handleFetchData" 
           action="progressive" 
           weight="primary" 
-          class="w-full justify-center"   
+          class="w-full justify-center"
           size="large"
         >
           <template #icon>
@@ -273,25 +273,23 @@ const quickRanges = [
 
 
 const activeRange = ref('all');
-
-
 const applyQuickRange = (range) => {
   activeRange.value = range;
 
-    const now = new Date();
-    let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const now = new Date();
+  let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    if (range === 'all') {
-        start = new Date(2020, 1, 1);
-    } else if (range === 'ytd') {
-        start = new Date(now.getFullYear(), 0, 1);
-    } else {
-        const months = parseInt(range.slice(0, -1), 10);
-        start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
-    }
-    
-    filters.dateStart = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
-    filters.dateEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
+  if (range === 'all') {
+    start = new Date(2020, 1, 1);
+  } else if (range === 'ytd') {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else {
+    const months = parseInt(range.slice(0, -1), 10);
+    start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+  }
+
+  filters.dateStart = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+  filters.dateEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
 };
 
 const handleFetchData = () => {
