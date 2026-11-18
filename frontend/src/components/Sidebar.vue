@@ -97,7 +97,7 @@
             size="medium"
             class="quick-range-btn"
             :class="{ 'is-active': option.value === activeRange }"
-            :title="getFullLabel(option.value)"
+            :title="option.tooltip"
           >
             {{ option.label }}
           </cdx-button>
@@ -280,25 +280,47 @@ const formatApiDate = (dateString) => {
 };
 
 const quickRanges = [
-  { label: 'Last 3m', value: '4m' }, { label: 'Last 6m', value: '7m' },
-  { label: 'YTD', value: 'ytd' }, { label: 'All', value: 'all' }
+  {
+    label: 'Last 3m',
+    value: '3m',
+    tooltip: 'Show activity from the last 3 months'
+  },
+  {
+    label: 'Last 6m',
+    value: '6m',
+    tooltip: 'Show activity from the last 6 months'
+  },
+  {
+    label: 'YTD',
+    value: 'ytd',
+    tooltip: 'Show activity from the beginning of this year'
+  },
+  {
+    label: 'All',
+    value: 'all',
+    tooltip: 'Show all available activity'
+  }
 ];
 
-const applyQuickRange = (range) => {
-    const now = new Date();
-    let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    if (range === 'all') {
-        start = new Date(2020, 1, 1);
-    } else if (range === 'ytd') {
-        start = new Date(now.getFullYear(), 0, 1);
-    } else {
-        const months = parseInt(range.slice(0, -1), 10);
-        start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
-    }
-    
-    filters.dateStart = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
-    filters.dateEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
+const activeRange = ref('all');
+const applyQuickRange = (range) => {
+  activeRange.value = range;
+
+  const now = new Date();
+  let start, end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  if (range === 'all') {
+    start = new Date(2020, 1, 1);
+  } else if (range === 'ytd') {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else {
+    const months = parseInt(range.slice(0, -1), 10);
+    start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+  }
+
+  filters.dateStart = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+  filters.dateEnd = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}`;
 };
 
 const handleFetchData = () => {
