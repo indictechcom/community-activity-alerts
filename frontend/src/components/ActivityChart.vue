@@ -27,7 +27,7 @@
         <div v-if="hasData" class="flex gap-4 text-xs font-medium">
           <div class="flex items-center gap-2">
             <span class="w-3 h-1 bg-[#36c] rounded-full"></span>
-            <span class="text-gray-600">Edits</span>
+            <span class="text-gray-600">{{ seriesLabel }}</span>
           </div>
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 bg-green-500 transform rotate-45"></span>
@@ -82,6 +82,16 @@ const props = defineProps({
   subtitle: {
     type: String,
     default: ''
+  },
+  // Short name in the legend, e.g. "Edits" or "Editors"
+  seriesLabel: {
+    type: String,
+    default: 'Edits'
+  },
+  // Name used on the value axis and in tooltips, e.g. "Edit Count"
+  countLabel: {
+    type: String,
+    default: 'Edit Count'
   }
 })
 
@@ -111,11 +121,11 @@ const renderChart = () => {
     {
       ...lineTrace,
       mode: lineMode,
-      name: 'Edits',
+      name: props.seriesLabel,
       // Standard Wiki Blue Line
       line: { color: COLOR_PROGRESSIVE, width: 2, shape: 'spline' },
       marker: { color: COLOR_PROGRESSIVE, size: 6 },
-      hovertemplate: '<b>%{x}</b><br>Edits: %{y}<extra></extra>'
+      hovertemplate: `<b>%{x}</b><br>${props.countLabel}: %{y}<extra></extra>`
     },
     {
       ...peaksTrace,
@@ -129,7 +139,7 @@ const renderChart = () => {
       text: peaksTrace.y.map(val => `${val}`),
       textposition: 'top center',
       textfont: { color: COLOR_DESTRUCTIVE, size: 11, family: 'sans-serif' },
-      hovertemplate: '<b>Peak Alert</b><br>Date: %{x}<br>Edits: %{y}<extra></extra>'
+      hovertemplate: `<b>Peak Alert</b><br>Date: %{x}<br>${props.countLabel}: %{y}<extra></extra>`
     }
   ]
 
@@ -150,7 +160,7 @@ const renderChart = () => {
       zeroline: false
     },
     yaxis: {
-      title: 'Edit Count',
+      title: props.countLabel,
       gridcolor: COLOR_GRID,
       linecolor: COLOR_GRID,
       tickfont: { color: COLOR_SUBTLE },
@@ -244,7 +254,7 @@ const downloadImage = () => {
   })
 }
 
-watch(() => props.chartData, () => {
+watch(() => [props.chartData, props.seriesLabel, props.countLabel], () => {
   if (hasData.value) {
     nextTick(() => {
       renderChart()

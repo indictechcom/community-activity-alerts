@@ -54,6 +54,8 @@
               :chart-data="activityData.chartData" 
               :title="currentContext.title"
               :subtitle="currentContext.subtitle"
+              series-label="Edits"
+              count-label="Edit Count"
             />
             
             <PeaksTable :peaks="activityData.peaks" :project="projectName" />
