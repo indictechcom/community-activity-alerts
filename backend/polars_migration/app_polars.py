@@ -327,12 +327,15 @@ def index():
 # --- Optional community name search endpoint ---
 @app.route("/search")
 def search():
-    query = request.args.get("query", "").lower()
+    query = (request.args.get("query") or "").strip().lower()
+    if not query:
+        return jsonify([])
+
     communities = get_all_communities()
     filtered_communities = [
-        value["name"]
-        for key, value in communities.items()
-        if "name" in value and query in value["name"].lower()
+        {"name": name, "sites": sites}
+        for name, sites in communities.items()
+        if query in str(name).lower()
     ]
     return jsonify(filtered_communities)
 

@@ -69,25 +69,61 @@ def serve(path):
         return send_from_directory(app.static_folder, "index.html")
 
 
+def load_community_catalog():
+    """Language communities from SiteMatrix, keyed by the English local name.
+
+    Hindi is stored as localname "Hindi" (native name "हिन्दी", code "hi").
+    """
+    url = "https://commons.wikimedia.org/w/api.php?action=sitematrix&smtype=language&format=json"
+    response = requests.get(url, headers=getHeader(), timeout=30)
+    response.raise_for_status()
+    sitematrix = response.json()["sitematrix"]
+
+    catalog = {}
+    for key, value in sitematrix.items():
+        if not (isinstance(key, str) and key.isdigit() and isinstance(value, dict)):
+            continue
+        if "localname" not in value:
+            continue
+        sites = [
+            {"sitename": site["code"], "url": site["url"]}
+            for site in value.get("site", [])
+        ]
+        localname = value["localname"]
+        catalog[localname] = {
+            "name": localname,
+            "native_name": value.get("name") or localname,
+            "code": value.get("code") or "",
+            "sites": sites,
+        }
+    return catalog
+
+
+def filter_communities(catalog, query):
+    """Case-insensitive substring search. An empty query matches nothing."""
+    needle = (query or "").strip().lower()
+    if not needle:
+        return []
+
+    matches = []
+    for entry in catalog.values():
+        haystack = " ".join(
+            [
+                entry.get("name") or "",
+                entry.get("native_name") or "",
+                entry.get("code") or "",
+            ]
+        ).lower()
+        if needle in haystack:
+            matches.append(entry)
+    return matches
+
+
 # --- Get communities list from SiteMatrix API ---
 @app.route("/api/communities")
 def get_all_communities():
-    url = "https://commons.wikimedia.org/w/api.php?action=sitematrix&smtype=language&format=json"
-
-    response = requests.get(url, headers=getHeader())
-    data = response.json()
-    sitematrix = data["sitematrix"]
-
-    languages = {}
-    for key, value in sitematrix.items():
-        if key.isdigit() and "localname" in value:
-            communities = [
-                {"sitename": site["code"], "url": site["url"]}
-                for site in value.get("site", [])
-            ]
-            languages[value["localname"]] = communities
-
-    return jsonify(languages)
+    catalog = load_community_catalog()
+    return jsonify({name: entry["sites"] for name, entry in catalog.items()})
 
 
 # --- Peak detection function ---
@@ -144,14 +180,16 @@ def log_peaks(peaks):
 # --- Optional community name search endpoint ---
 @app.route("/search")
 def search():
-    query = request.args.get("query", "").lower()
-    communities = get_all_communities()
-    filtered_communities = [
-        value["name"]
-        for key, value in communities.items()
-        if "name" in value and query in value["name"].lower()
-    ]
-    return jsonify(filtered_communities)
+    query = request.args.get("query", "")
+    if not (query or "").strip():
+        return jsonify([])
+
+    try:
+        catalog = load_community_catalog()
+    except (requests.RequestException, ValueError, KeyError):
+        return jsonify({"error": "Failed to load communities"}), 502
+
+    return jsonify(filter_communities(catalog, query))
 
 
 # --- API endpoint to update peak label ---
