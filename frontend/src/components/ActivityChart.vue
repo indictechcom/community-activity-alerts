@@ -68,6 +68,7 @@ import { ref, watch, computed, nextTick } from 'vue'
 import Plotly from 'plotly.js-dist-min'
 import { CdxButton, CdxIcon } from '@wikimedia/codex'
 import { cdxIconArrowUp, cdxIconArticle, cdxIconDownload, cdxIconImage } from '@wikimedia/codex-icons'
+import { formatStoredDate, toPlotlyCalendarDate } from '../utils/dates'
 
 const props = defineProps({
   chartData: {
@@ -99,6 +100,10 @@ const renderChart = () => {
 
   const { lineTrace, peaksTrace } = props.chartData
   const lineMode = lineTrace.x.length === 1 ? 'lines+markers' : lineTrace.mode;
+  const lineDates = lineTrace.x.map((date) => toPlotlyCalendarDate(date))
+  const lineLabels = lineTrace.x.map((date) => formatStoredDate(date) || String(date))
+  const peakDates = (peaksTrace?.x || []).map((date) => toPlotlyCalendarDate(date))
+  const peakLabels = (peaksTrace?.x || []).map((date) => formatStoredDate(date) || String(date))
 
   // CODEX COLORS (Hardcoded hex values matching standard Wiki tokens)
   const COLOR_BASE = '#202122';
@@ -110,15 +115,18 @@ const renderChart = () => {
   const data = [
     {
       ...lineTrace,
+      x: lineDates,
       mode: lineMode,
       name: 'Edits',
       // Standard Wiki Blue Line
       line: { color: COLOR_PROGRESSIVE, width: 2, shape: 'spline' },
       marker: { color: COLOR_PROGRESSIVE, size: 6 },
-      hovertemplate: '<b>%{x}</b><br>Edits: %{y}<extra></extra>'
+      customdata: lineLabels,
+      hovertemplate: '<b>%{customdata}</b><br>Edits: %{y}<extra></extra>'
     },
     {
       ...peaksTrace,
+      x: peakDates,
       name: 'High Activity Alert',
       marker: {
         size: 10,
@@ -129,7 +137,8 @@ const renderChart = () => {
       text: peaksTrace.y.map(val => `${val}`),
       textposition: 'top center',
       textfont: { color: COLOR_DESTRUCTIVE, size: 11, family: 'sans-serif' },
-      hovertemplate: '<b>Peak Alert</b><br>Date: %{x}<br>Edits: %{y}<extra></extra>'
+      customdata: peakLabels,
+      hovertemplate: '<b>Peak Alert</b><br>Date: %{customdata}<br>Edits: %{y}<extra></extra>'
     }
   ]
 
@@ -147,7 +156,9 @@ const renderChart = () => {
       gridcolor: COLOR_GRID,
       linecolor: COLOR_GRID,
       tickfont: { color: COLOR_SUBTLE },
-      zeroline: false
+      zeroline: false,
+      // Hover uses the calendar day. Tick labels stay monthly.
+      hoverformat: '%-d %B %Y'
     },
     yaxis: {
       title: 'Edit Count',

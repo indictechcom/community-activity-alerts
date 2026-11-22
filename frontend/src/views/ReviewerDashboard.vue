@@ -96,13 +96,13 @@
                 <span class="text-sm text-gray-500">{{ annotation.project }}</span>
               </div>
               <p class="text-sm text-gray-600">
-                <strong>Date:</strong> {{ formatDate(annotation.timestamp) }}
+                <strong>Date:</strong> {{ formatStoredDate(annotation.timestamp) }}
               </p>
               <p class="text-sm text-gray-600">
                 <strong>Submitted by:</strong> {{ annotation.submitted_by }}
               </p>
               <p class="text-sm text-gray-600">
-                <strong>Submitted:</strong> {{ formatDate(annotation.submitted_at) }}
+                <strong>Submitted:</strong> {{ formatTimestamp(annotation.submitted_at, { withTime: true }) }}
               </p>
             </div>
           </div>
@@ -171,7 +171,7 @@
                 <strong>Reported by:</strong> {{ report.reported_by }}
               </p>
               <p class="text-sm text-gray-600">
-                <strong>Reported:</strong> {{ formatDate(report.reported_at) }}
+                <strong>Reported:</strong> {{ formatTimestamp(report.reported_at, { withTime: true }) }}
               </p>
             </div>
           </div>
@@ -245,6 +245,7 @@ import ReviewAnnotationModal from '../components/ReviewAnnotationModal.vue'
 import ReviewReportModal from '../components/ReviewReportModal.vue'
 import axios from 'axios'
 import Navbar from '../components/Navbar.vue'
+import { formatStoredDate, formatTimestamp } from '../utils/dates'
 
 const activeTab = ref('annotations')
 const loading = ref(false)
@@ -261,16 +262,6 @@ const selectedAnnotation = ref(null)
 const selectedReport = ref(null)
 const reviewAction = ref('')
 const reportReviewAction = ref('')
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
 
 const fetchStats = async () => {
   try {
