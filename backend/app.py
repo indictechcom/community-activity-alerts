@@ -208,21 +208,84 @@ def get_peak_label():
 
 # app.py
 
-@app.route("/api/activity-data")
-def get_activity_data():
-    language = request.args.get("language")
-    project_group = request.args.get("project_group")
+# Activity dates are month labels such as "Jan 2026", sent by the frontend.
+_MONTH_ABBR = {
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "may": 5,
+    "jun": 6,
+    "jul": 7,
+    "aug": 8,
+    "sep": 9,
+    "oct": 10,
+    "nov": 11,
+    "dec": 12,
+}
+_MISSING_PARAMS_ERROR = "Missing required parameters"
+_INVALID_DATE_ERROR = "Invalid date format. Use Mon YYYY, for example Jan 2026."
+_DATE_RANGE_ERROR = "Start date must not be later than end date."
+
+
+def _parse_month_year(value):
+    """Parse a 'Mon YYYY' label. Raises ValueError when the format is wrong."""
+    parts = (value or "").strip().split()
+    if len(parts) != 2:
+        raise ValueError(_INVALID_DATE_ERROR)
+    month = _MONTH_ABBR.get(parts[0].lower())
+    if month is None or not parts[1].isdigit():
+        raise ValueError(_INVALID_DATE_ERROR)
+    year = int(parts[1])
+    if year < 1 or year > 9999:
+        raise ValueError(_INVALID_DATE_ERROR)
+    return datetime(year, month, 1)
+
+
+def activity_date_range(datestart, dateend):
+    """Validate a month range before any database access.
+
+    Returns (start, end) where start is the first instant of the start month
+    and end is the last instant of the end month.
+    """
+    if not ((datestart or "").strip() and (dateend or "").strip()):
+        raise ValueError(_MISSING_PARAMS_ERROR)
+
+    start = _parse_month_year(datestart)
+    end_month = _parse_month_year(dateend)
+    last_day = calendar.monthrange(end_month.year, end_month.month)[1]
+    end = end_month.replace(day=last_day, hour=23, minute=59, second=59)
+    if start > end:
+        raise ValueError(_DATE_RANGE_ERROR)
+    return start, end
+
+
+def _activity_request_params():
+    """Read shared activity filters. Date errors are returned before a query."""
+    language = (request.args.get("language") or "").strip()
+    project_group = (request.args.get("project_group") or "").strip()
     datestart = request.args.get("datestart")
     dateend = request.args.get("dateend")
 
-    if not (language and project_group and datestart and dateend):
-        return jsonify({"error": "Missing required parameters"}), 400
+    if not (language and project_group):
+        return None, (jsonify({"error": _MISSING_PARAMS_ERROR}), 400)
 
+    try:
+        start, end = activity_date_range(datestart, dateend)
+    except ValueError as exc:
+        return None, (jsonify({"error": str(exc)}), 400)
+
+    return (language, project_group, start, end), None
+
+
+@app.route("/api/activity-data")
+def get_activity_data():
+    params, error_response = _activity_request_params()
+    if error_response:
+        return error_response
+
+    language, project_group, start, end = params
     project = project_group
-    start = datetime.strptime(datestart, "%b %Y").replace(day=1)
-    end_dt = datetime.strptime(dateend, "%b %Y")
-    last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
-    end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
 
     try:
         conn = get_db_connection()
@@ -319,20 +382,12 @@ def get_activity_data():
 # --- Editor Counts API Endpoints ---
 @app.route("/api/editor-activity-data")
 def get_editor_activity_data():
-    language = request.args.get("language")
-    project_group = request.args.get("project_group")
-    datestart = request.args.get("datestart")
-    dateend = request.args.get("dateend")
+    params, error_response = _activity_request_params()
+    if error_response:
+        return error_response
 
-    if not (language and project_group and datestart and dateend):
-        return jsonify({"error": "Missing required parameters"}), 400
-
+    language, project_group, start, end = params
     project = project_group
-
-    start = datetime.strptime(datestart, "%b %Y").replace(day=1)
-    end_dt = datetime.strptime(dateend, "%b %Y")
-    last_day = calendar.monthrange(end_dt.year, end_dt.month)[1]
-    end = end_dt.replace(day=last_day, hour=23, minute=59, second=59)
 
     try:
         conn = get_db_connection()
