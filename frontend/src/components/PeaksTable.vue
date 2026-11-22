@@ -142,6 +142,7 @@ import { cdxIconAlert, cdxIconCheck, cdxIconAdd, cdxIconLinkExternal, cdxIconFla
 import AnnotationModal from './AnnotationModal.vue'
 import EditAnnotationModal from './EditAnnotationModal.vue'
 import axios from 'axios'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   peaks: {
@@ -160,14 +161,7 @@ const peakAnnotations = ref({})
 const editAnnotationData = ref(null)
 const showEditAnnotationModal = ref(false)
 
-// Formats a timestamp like "2025-02-01" into "Feb 1, 2025"
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+const formatDate = (dateString) => formatStoredDate(dateString)
 
 // Get the appropriate count value (edits or editors)
 const getCountValue = (peak) => {
@@ -241,7 +235,10 @@ const openEditAnnotationModal = (peak, annotation) => {
   editAnnotationData.value = {
     id: annotation.id,
     description: annotation.description,
-    relevant_link: annotation.relevant_link || ''
+    relevant_link: annotation.relevant_link || '',
+    project: props.project,
+    timestamp: peak.timestamp,
+    peak_type: peakType
   }
 
   showEditAnnotationModal.value = true   

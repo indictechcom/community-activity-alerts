@@ -130,6 +130,7 @@ import {
   validateWikimediaLink,
   FORM_ERROR_MESSAGE
 } from '../utils/annotationValidation'
+import { formatStoredDate } from '../utils/dates'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -152,13 +153,7 @@ const showDescriptionError = computed(() => submitAttempted.value && !descriptio
 const linkValidation = computed(() => validateWikimediaLink(relevantLink.value))
 const showLinkError = computed(() => submitAttempted.value && !linkValidation.value.valid)
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+const formatDate = (dateString) => formatStoredDate(dateString)
 
 const submitEdit = async () => {
   errorMessage.value = ''

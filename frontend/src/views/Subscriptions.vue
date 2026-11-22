@@ -351,6 +351,7 @@ import {
   cdxIconLanguage
 } from '@wikimedia/codex-icons'
 import Navbar from '../components/Navbar.vue'
+import { formatStoredDate } from '../utils/dates'
 
 const auth = useAuthStore()
 
@@ -631,12 +632,7 @@ const formatNotificationType = (type) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  return formatStoredDate(dateString)
 }
 
 onMounted(async () => {
